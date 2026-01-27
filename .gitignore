@@ -27,6 +27,4 @@ target/
 bin/
 dist/
 ## Cargo
-.cargo/config
-.cargo/credentials
-.cargo/bin/
+.cargo/

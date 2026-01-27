@@ -5,11 +5,9 @@ set -e
 # Usage: 
 #   ./scripts/build.sh          - Build for current host only
 #   ./scripts/build.sh --all    - Build for all supported platforms
+#   ./scripts/build.sh <target> - Build for a specific target (e.g., macos_arm64, linux_amd64, etc.)
 
-BUILD_ALL=false
-if [[ "$1" == "--all" ]]; then
-    BUILD_ALL=true
-fi
+BUILD_TARGET=$1
 
 # Detect host info
 OS_TYPE=$(uname -s | tr '[:upper:]' '[:lower:]')
@@ -29,10 +27,9 @@ case "$ARCH_TYPE" in
 esac
 
 package() {
-    TARGET_NAME=$1
-    TARGET_PLATFORM=$2 # e.g. macos_arm64, windows_amd64
-    BIN_SRC=$3         # relative to project root
-    IS_WINDOWS=$4
+    TARGET_PLATFORM=$1 # e.g. macos_arm64, windows_amd64
+    BIN_SRC=$2         # relative to project root
+    IS_WINDOWS=$3
 
     DIST_DIR="dist/${TARGET_PLATFORM}/taskflow"
     echo "📦 Packaging for ${TARGET_PLATFORM} -> ${DIST_DIR}"
@@ -49,37 +46,63 @@ package() {
 }
 
 build_and_package() {
-    TARGET=$1          # rust target triple
-    PLATFORM_DIR=$2    # e.g. macos_arm64
+    PLATFORM_NAME=$1   # e.g. macos_arm64
+    TARGET=$2          # rust target triple
     IS_WIN=$3          # true/false
     
-    echo "🚀 Building for $TARGET..."
+    echo "🚀 Building for $PLATFORM_NAME ($TARGET)..."
     cargo build --release --target "$TARGET"
     
     BIN_NAME="taskflow"
     if [ "$IS_WIN" = true ]; then BIN_NAME="taskflow.exe"; fi
     
-    package "taskflow" "$PLATFORM_DIR" "target/$TARGET/release/$BIN_NAME" "$IS_WIN"
+    package "$PLATFORM_NAME" "target/$TARGET/release/$BIN_NAME" "$IS_WIN"
 }
 
-# Clean dist
-rm -rf dist
-
-if [ "$BUILD_ALL" = true ]; then
-    echo "--- Building all platforms ---"
-    build_and_package "aarch64-apple-darwin" "macos_arm64" false
-    build_and_package "x86_64-apple-darwin" "macos_amd64" false
-    build_and_package "x86_64-unknown-linux-gnu" "linux_amd64" false
-    build_and_package "x86_64-pc-windows-msvc" "windows_amd64" true
-else
-    echo "--- Building for current host ($HOST_OS-$HOST_ARCH) ---"
-    cargo build --release
-    
-    BIN_EXT=""
-    IS_WIN=false
-    if [ "$HOST_OS" = "windows" ]; then BIN_EXT=".exe"; IS_WIN=true; fi
-    
-    package "taskflow" "${HOST_OS}_${HOST_ARCH}" "target/release/taskflow${BIN_EXT}" "$IS_WIN"
+# Clean dist only if building all or if explicitly requested
+if [[ "$BUILD_TARGET" == "--all" ]] || [[ -z "$BUILD_TARGET" ]]; then
+    rm -rf dist
 fi
+
+case "$BUILD_TARGET" in
+    "--all")
+        echo "--- Building all platforms ---"
+        build_and_package "macos_arm64" "aarch64-apple-darwin" false
+        build_and_package "macos_amd64" "x86_64-apple-darwin" false
+        build_and_package "linux_amd64" "x86_64-unknown-linux-gnu" false
+        build_and_package "linux_arm64" "aarch64-unknown-linux-musl" false
+        build_and_package "windows_amd64" "x86_64-pc-windows-gnu" true
+        ;;
+    "macos_arm64")
+        build_and_package "macos_arm64" "aarch64-apple-darwin" false
+        ;;
+    "macos_amd64")
+        build_and_package "macos_amd64" "x86_64-apple-darwin" false
+        ;;
+    "linux_amd64")
+        build_and_package "linux_amd64" "x86_64-unknown-linux-gnu" false
+        ;;
+    "linux_arm64")
+        build_and_package "linux_arm64" "aarch64-unknown-linux-musl" false
+        ;;
+    "windows_amd64")
+        build_and_package "windows_amd64" "x86_64-pc-windows-gnu" true
+        ;;
+    "")
+        echo "--- Building for current host ($HOST_OS-$HOST_ARCH) ---"
+        cargo build --release
+        
+        BIN_EXT=""
+        IS_WIN=false
+        if [ "$HOST_OS" = "windows" ]; then BIN_EXT=".exe"; IS_WIN=true; fi
+        
+        package "${HOST_OS}_${HOST_ARCH}" "target/release/taskflow${BIN_EXT}" "$IS_WIN"
+        ;;
+    *)
+        echo "❌ Unknown build target: $BUILD_TARGET"
+        echo "Usage: ./scripts/build.sh [--all | macos_arm64 | macos_amd64 | linux_amd64 | linux_arm64 | windows_amd64]"
+        exit 1
+        ;;
+esac
 
 echo "✅ Build and distribution complete!"
