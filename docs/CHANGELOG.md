@@ -1,11 +1,10 @@
 # CHANGELOG
-<!-- CURRENT_TASK: 20260127-174839 -->
 
 ## [20260127-174839] Fix GitHub Actions musl-cross installation
 - **开始时间**: 2026-01-27 17:48:39
-- **完成时间**: (进行中)
-- **类型**: (待定)
-- **描述**: (待补充)
+- **完成时间**: 2026-01-27 17:52:21
+- **类型**: feat(ci)
+- **描述**: Refactor release workflow to use matrix strategy for stability
 
 ## [20260127-173755] Finalize release workflow and add bilingual README
 - **开始时间**: 2026-01-27 17:37:55
