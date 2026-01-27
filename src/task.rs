@@ -218,9 +218,11 @@ pub fn release_task(version: &str) -> Result<()> {
     fs::write(&cargo_path, updated_cargo.to_string())?;
     println!("✓ Cargo.toml updated to v{}", version);
 
-    // 3. Commit version bump on dev
+    // 3. Commit version bump on dev and push
     git::git_add_all()?;
     git::git_commit(&format!("chore: release v{}", version))?;
+    println!("📤 Syncing dev with remote...");
+    git::push("origin", "dev", false)?;
 
     // 4. Merge dev into main
     println!("🚀 Merging dev into main...");
