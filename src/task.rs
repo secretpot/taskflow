@@ -12,7 +12,12 @@ pub fn get_changelog_path() -> Result<PathBuf> {
     Ok(path)
 }
 
-pub fn open_task(description: &str) -> Result<()> {
+pub fn open_task(description: &str, slug: Option<&str>) -> Result<()> {
+    let current_branch = git::get_current_branch()?;
+    if current_branch.starts_with("task/") {
+        return Err(anyhow!("You are already on a task branch ({})! Please close it before opening a new one.", current_branch));
+    }
+
     let changelog_path = get_changelog_path()?;
     let docs_dir = changelog_path.parent().unwrap();
     
@@ -26,11 +31,25 @@ pub fn open_task(description: &str) -> Result<()> {
 
     let content = fs::read_to_string(&changelog_path)?;
     if content.contains("<!-- CURRENT_TASK:") {
-        return Err(anyhow!("A task is already OPEN! Please close it before opening a new one."));
+        return Err(anyhow!("A task is already OPEN (in CHANGELOG)! Please close it before opening a new one."));
     }
+
+    // Git operations: Checkout dev and pull
+    println!("🚀 Switching to dev and pulling latest changes...");
+    git::checkout("dev")?;
+    git::pull("origin", "dev")?;
 
     let task_id = Local::now().format("%Y%m%d-%H%M%S").to_string();
     let current_time = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+
+    // Create branch
+    let branch_name = if let Some(s) = slug {
+        format!("task/{}-{}", task_id, s)
+    } else {
+        format!("task/{}", task_id)
+    };
+    println!("🌿 Creating and switching to branch {}...", branch_name);
+    git::create_branch(&branch_name)?;
 
     let mut new_content = format!(
         "# CHANGELOG\n<!-- CURRENT_TASK: {} -->\n\n## [{}] {}\n- **开始时间**: {}\n- **完成时间**: (进行中)\n- **类型**: (待定)\n- **描述**: (待补充)\n\n",
@@ -49,6 +68,7 @@ pub fn open_task(description: &str) -> Result<()> {
 
     println!("✓ Task OPENED successfully");
     println!("Task ID: {}", task_id);
+    println!("Branch:  {}", branch_name);
     println!("Description: {}", description);
     println!("CHANGELOG updated: {:?}", changelog_path);
 
@@ -63,6 +83,11 @@ pub fn close_task(
     footer: Option<String>,
     auto_stage: bool,
 ) -> Result<()> {
+    let current_branch = git::get_current_branch()?;
+    if !current_branch.starts_with("task/") {
+        return Err(anyhow!("You are not on a task branch ({})! Use 'git checkout' to switch to your task branch.", current_branch));
+    }
+
     let changelog_path = get_changelog_path()?;
     let content = fs::read_to_string(&changelog_path)
         .context("CHANGELOG.md not found. Have you opened a task?")?;
@@ -141,9 +166,68 @@ pub fn close_task(
         println!("Warning: No staged changes found. Skipping git commit.");
     }
 
+    // Git workflow: Merge to dev and cleanup
+    println!("🚀 Merging task branch into dev...");
+    git::checkout("dev")?;
+    git::merge(&current_branch)?;
+    
+    println!("🧹 Deleting task branch {}...", current_branch);
+    git::delete_branch(&current_branch)?;
+
     println!("✓ Task CLOSED successfully");
     println!("Task ID: {}", task_id);
     println!("CHANGELOG updated: {:?}", changelog_path);
+
+    Ok(())
+}
+
+pub fn release_task(version: &str) -> Result<()> {
+    println!("📦 Starting release process for version v{}...", version);
+
+    // 1. Ensure we are on dev and clean
+    git::checkout("dev")?;
+    if git::has_staged_changes()? {
+        return Err(anyhow!("You have staged changes on dev. Please commit or stash them before releasing."));
+    }
+
+    // 2. Update Cargo.toml version
+    let mut cargo_path = std::env::current_dir()?;
+    cargo_path.push("Cargo.toml");
+    let cargo_content = fs::read_to_string(&cargo_path)?;
+    let re_version = Regex::new(r#"version = "(.*)""#)?;
+    let updated_cargo = re_version.replace(&cargo_content, format!(r#"version = "{}""#, version));
+    fs::write(&cargo_path, updated_cargo.to_string())?;
+    println!("✓ Cargo.toml updated to v{}", version);
+
+    // 3. Commit version bump on dev
+    git::git_add_all()?;
+    git::git_commit(&format!("chore: release v{}", version))?;
+
+    // 4. Merge dev into main
+    println!("🚀 Merging dev into main...");
+    git::checkout("main")?;
+    git::merge("dev")?;
+
+    // 5. Create tag
+    println!("🏷️  Creating tag v{}...", version);
+    let tag_name = format!("v{}", version);
+    let status = std::process::Command::new("git")
+        .arg("tag")
+        .arg("-a")
+        .arg(&tag_name)
+        .arg("-m")
+        .arg(format!("Release {}", tag_name))
+        .status()?;
+    
+    if !status.success() {
+        return Err(anyhow!("Failed to create git tag {}", tag_name));
+    }
+
+    // 6. Return to dev
+    git::checkout("dev")?;
+
+    println!("✅ Release v{} complete!", version);
+    println!("Tip: Remember to push with 'git push origin main --tags'");
 
     Ok(())
 }
@@ -163,7 +247,10 @@ pub fn status() -> Result<()> {
         .map(|c| c.get(1).unwrap().as_str())
         .unwrap_or("Unknown");
 
+    let branch = git::get_current_branch().unwrap_or_else(|_| "Unknown".to_string());
+
     println!("Task ID:     {}", task_id);
+    println!("Branch:      {}", branch);
     println!("Description: {}", description);
 
     Ok(())

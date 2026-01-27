@@ -18,6 +18,8 @@ enum Commands {
     Open {
         /// Task description
         description: String,
+        /// Optional branch slug
+        slug: Option<String>,
     },
     /// Close the current task
     Close {
@@ -36,6 +38,11 @@ enum Commands {
         #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
         auto_stage: bool,
     },
+    /// Release a new version
+    Release {
+        /// New version string (e.g. 0.1.0)
+        version: String,
+    },
     /// Get current task status
     Status,
 }
@@ -44,11 +51,14 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Open { description } => {
-            task::open_task(&description)?;
+        Commands::Open { description, slug } => {
+            task::open_task(&description, slug.as_deref())?;
         }
         Commands::Close { r#type, scope, subject, body, footer, auto_stage } => {
             task::close_task(&r#type, Some(scope), &subject, &body, Some(footer), auto_stage)?;
+        }
+        Commands::Release { version } => {
+            task::release_task(&version)?;
         }
         Commands::Status => {
             task::status()?;
