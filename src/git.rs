@@ -44,7 +44,23 @@ pub fn get_current_branch() -> Result<String> {
         .output()?;
     
     if !output.status.success() {
-        return Err(anyhow!("Failed to get current branch"));
+        // Handle empty repository by trying to get the default branch name
+        let default_branch = Command::new("git")
+            .arg("config")
+            .arg("--get")
+            .arg("init.defaultBranch")
+            .output()?;
+        
+        let branch = if default_branch.status.success() {
+            String::from_utf8(default_branch.stdout)?.trim().to_string()
+        } else {
+            "main".to_string()
+        };
+        
+        if branch.is_empty() {
+            return Ok("main".to_string());
+        }
+        return Ok(branch);
     }
     
     Ok(String::from_utf8(output.stdout)?.trim().to_string())
@@ -115,6 +131,18 @@ pub fn delete_branch(branch: &str) -> Result<()> {
 }
 
 pub fn push(remote: &str, branch: &str, include_tags: bool) -> Result<()> {
+    // Check if remote exists
+    let remote_check = Command::new("git")
+        .arg("remote")
+        .arg("get-url")
+        .arg(remote)
+        .output()?;
+    
+    if !remote_check.status.success() {
+        println!("ℹ️  Remote '{}' not found. Skipping push.", remote);
+        return Ok(());
+    }
+
     let mut cmd = Command::new("git");
     cmd.arg("push").arg(remote).arg(branch);
     
@@ -125,7 +153,7 @@ pub fn push(remote: &str, branch: &str, include_tags: bool) -> Result<()> {
     let status = cmd.status()?;
     
     if !status.success() {
-        println!("Warning: git push {} {} failed. Continuing...", remote, branch);
+        println!("Warning: git push {} {} failed. Your internet connection might be down.", remote, branch);
     }
     Ok(())
 }

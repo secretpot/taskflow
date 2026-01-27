@@ -251,9 +251,14 @@ pub fn status() -> Result<()> {
         .context("CHANGELOG.md not found.")?;
 
     let re_marker = Regex::new(r"<!-- CURRENT_TASK: (.*) -->")?;
-    let task_id = re_marker.captures(&content)
-        .ok_or_else(|| anyhow!("No active task"))?
-        .get(1).unwrap().as_str();
+    let captures = re_marker.captures(&content);
+    
+    if captures.is_none() {
+        println!("No active task found.");
+        return Ok(());
+    }
+    
+    let task_id = captures.unwrap().get(1).unwrap().as_str();
 
     let re_desc = Regex::new(&format!(r"## \[{}\] (.*)", regex::escape(task_id)))?;
     let description = re_desc.captures(&content)

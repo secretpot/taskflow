@@ -1,11 +1,10 @@
 # CHANGELOG
-<!-- CURRENT_TASK: 20260127-155654 -->
 
 ## [20260127-155654] Improve robustness and error handling
 - **开始时间**: 2026-01-27 15:56:54
-- **完成时间**: (进行中)
-- **类型**: (待定)
-- **描述**: (待补充)
+- **完成时间**: 2026-01-27 16:03:39
+- **类型**: fix(git)
+- **描述**: Improve robustness and error handling
 
 ## [20260127-153331] Support remote sync, changelog safety, and GitHub Actions
 - **开始时间**: 2026-01-27 15:33:31
