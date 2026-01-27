@@ -1,11 +1,10 @@
 # CHANGELOG
-<!-- CURRENT_TASK: 20260127-180856 -->
 
 ## [20260127-180856] Fix arm64 CI linking and refine distribution packaging
 - **开始时间**: 2026-01-27 18:08:56
-- **完成时间**: (进行中)
-- **类型**: (待定)
-- **描述**: (待补充)
+- **完成时间**: 2026-01-27 18:11:31
+- **类型**: feat(ci)
+- **描述**: Fix arm64 CI linking and optimize skill package
 
 ## [20260127-174839] Fix GitHub Actions musl-cross installation
 - **开始时间**: 2026-01-27 17:48:39

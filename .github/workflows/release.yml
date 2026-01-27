@@ -37,11 +37,11 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      - name: Install Cross-Compilation Tools (Linux/Windows)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y musl-tools gcc-mingw-w64-x86-64
+      - name: Install Cross-Compilation Tools
+        if: contains(matrix.target, 'linux') || contains(matrix.target, 'windows')
+        uses: taiki-e/setup-cross-toolchain-action@v1
+        with:
+          target: ${{ matrix.target }}
 
       - name: Run Build Script
         run: bash scripts/build.sh ${{ matrix.platform }}
