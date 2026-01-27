@@ -1,4 +1,11 @@
 # CHANGELOG
+<!-- CURRENT_TASK: 20260127-181716 -->
+
+## [20260127-181716] Fix GitHub Actions release permissions
+- **开始时间**: 2026-01-27 18:17:16
+- **完成时间**: (进行中)
+- **类型**: (待定)
+- **描述**: (待补充)
 
 ## [20260127-180856] Fix arm64 CI linking and refine distribution packaging
 - **开始时间**: 2026-01-27 18:08:56
