@@ -113,3 +113,19 @@ pub fn delete_branch(branch: &str) -> Result<()> {
     }
     Ok(())
 }
+
+pub fn push(remote: &str, branch: &str, include_tags: bool) -> Result<()> {
+    let mut cmd = Command::new("git");
+    cmd.arg("push").arg(remote).arg(branch);
+    
+    if include_tags {
+        cmd.arg("--tags");
+    }
+
+    let status = cmd.status()?;
+    
+    if !status.success() {
+        println!("Warning: git push {} {} failed. Continuing...", remote, branch);
+    }
+    Ok(())
+}

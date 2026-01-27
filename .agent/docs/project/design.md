@@ -7,12 +7,14 @@ The tool is built as a modular Rust CLI application.
 - **Path Resolution**: Uses `std::env::current_dir()` to ensure all operations happen relative to the project where the command is executed.
 - **State Management**: Uses HTML comments in `docs/CHANGELOG.md` (`<!-- CURRENT_TASK: ID -->`) as the source of truth for the active task.
 
-### Build & Distribution (build.sh / build.bat)
-- **Centralized Logic**: Redundant `setup.rs` was removed in favor of shell/batch scripts for better flexibility across platforms.
+### Build & Distribution (build.sh / GitHub Actions)
+- **Multi-layered Build**: Local machine builds via `build.sh`; cloud-based release builds via GitHub Actions.
 - **Packaging**: The scripts handle compiling the binary and packaging it with `SKILL.md` into a structured `dist/` hierarchy.
-- **Cross-Compilation**: `build.sh --all` leverages `rustup` targets to produce binaries for macOS (Intel/ARM), Linux, and Windows.
+- **Cross-Compilation**: `build.sh --all` leverages `rustup` targets and cross-compilation toolchains (GCC) for macOS, Linux, and Windows.
 
 ## Key Decisions
+- **Branching Model (Main/Dev)**: Adopted a standard branching model where `main` is the stable release branch and `dev` is for active development.
+- **Immediate Task Locking**: `open` command performs an immediate `chore` commit to prevent changelog data loss across branch switches.
+- **Automated Publishing**: GitHub Actions triggered by tags reduce manual build errors and ensure consistent release quality.
 - **PWD over Script Dir**: Solves the "skill-to-project" mismatch.
-- **Asset Separation**: `SKILL.md` is moved to `assets/` to keep the root directory clean and clearly separate source from distribution templates.
-- **Simplified CLI**: Position-based arguments for the `close` command were refined for a smoother developer experience.
+- **Asset Separation**: `SKILL.md` is moved to `assets/` to keep the root directory clean.

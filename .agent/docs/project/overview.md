@@ -3,9 +3,9 @@
 ## Purpose
 `taskflow` is a CLI tool designed to manage the development lifecycle of agents. It ensures that every code change is tracked, documented in a CHANGELOG, and committed to Git with a standardized format.
 
-## Core Features
-- **Task Serialization**: Prevents multiple overlapping tasks to maintain a clean history.
-- **Automated CHANGELOG**: Generates and updates `docs/CHANGELOG.md` relative to the current working directory.
+- **Automated Branching**: `open` command handles branching from `dev` and immediate changelog "locking".
+- **Remote Synchronization**: `close` and `release` commands automatically push changes to remote repositories.
+- **GitHub-Integrated Releases**: Automated CI/CD (GitHub Actions) for cross-platform binary distribution on Tag creation.
 - **Structured Git Commits**: Enforces Conventional Commits with Task IDs integrated into the message.
 - **Streamlined Distribution**: 
     - `scripts/build.sh` (macOS/Linux) and `scripts/build.bat` (Windows) handle both local and cross-platform builds.

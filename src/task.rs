@@ -66,6 +66,11 @@ pub fn open_task(description: &str, slug: Option<&str>) -> Result<()> {
 
     fs::write(&changelog_path, new_content)?;
 
+    // Immediate commit on task branch to "lock" the task
+    println!("💾 Securing task in git...");
+    git::git_add_all()?;
+    let _ = git::git_commit(&format!("chore: open task [{}]", task_id));
+
     println!("✓ Task OPENED successfully");
     println!("Task ID: {}", task_id);
     println!("Branch:  {}", branch_name);
@@ -174,6 +179,10 @@ pub fn close_task(
     println!("🧹 Deleting task branch {}...", current_branch);
     git::delete_branch(&current_branch)?;
 
+    // Push dev to remote
+    println!("📤 Syncing dev with remote...");
+    git::push("origin", "dev", false)?;
+
     println!("✓ Task CLOSED successfully");
     println!("Task ID: {}", task_id);
     println!("CHANGELOG updated: {:?}", changelog_path);
@@ -223,11 +232,15 @@ pub fn release_task(version: &str) -> Result<()> {
         return Err(anyhow!("Failed to create git tag {}", tag_name));
     }
 
-    // 6. Return to dev
+    // 6. Push main and tags
+    println!("📤 Syncing main and tags with remote...");
+    git::push("origin", "main", true)?;
+
+    // 7. Return to dev
     git::checkout("dev")?;
 
     println!("✅ Release v{} complete!", version);
-    println!("Tip: Remember to push with 'git push origin main --tags'");
+    println!("GitHub Actions will now automatically build and publish the release.");
 
     Ok(())
 }
