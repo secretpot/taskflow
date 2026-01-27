@@ -1,4 +1,11 @@
 # CHANGELOG
+<!-- CURRENT_TASK: 20260127-165006 -->
+
+## [20260127-165006] Optimize SKILL.md for AI assistants
+- **开始时间**: 2026-01-27 16:50:06
+- **完成时间**: (进行中)
+- **类型**: (待定)
+- **描述**: (待补充)
 
 ## [20260127-161237] Enhance bootstrapping and remote robustness
 - **开始时间**: 2026-01-27 16:12:37
