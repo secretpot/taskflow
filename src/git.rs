@@ -1,6 +1,15 @@
 use std::process::Command;
 use anyhow::{Result, anyhow};
 
+pub fn is_empty_repo() -> Result<bool> {
+    let output = Command::new("git")
+        .arg("rev-parse")
+        .arg("HEAD")
+        .output()?;
+    
+    Ok(!output.status.success())
+}
+
 pub fn git_add_all() -> Result<()> {
     let status = Command::new("git")
         .arg("add")

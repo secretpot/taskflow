@@ -34,10 +34,17 @@ pub fn open_task(description: &str, slug: Option<&str>) -> Result<()> {
         return Err(anyhow!("A task is already OPEN (in CHANGELOG)! Please close it before opening a new one."));
     }
 
-    // Git operations: Checkout dev and pull
-    println!("🚀 Switching to dev and pulling latest changes...");
-    git::checkout("dev")?;
-    git::pull("origin", "dev")?;
+    // Git operations: Checkout dev and pull (Skip if repo is empty)
+    if git::is_empty_repo()? {
+        println!("ℹ️  Empty repository detected. Skipping dev sync.");
+    } else {
+        println!("🚀 Switching to dev and pulling latest changes...");
+        if let Err(e) = git::checkout("dev") {
+            println!("ℹ️  'dev' branch not found. Staying on current branch. ({})", e);
+        } else {
+            let _ = git::pull("origin", "dev");
+        }
+    }
 
     let task_id = Local::now().format("%Y%m%d-%H%M%S").to_string();
     let current_time = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
@@ -173,7 +180,10 @@ pub fn close_task(
 
     // Git workflow: Merge to dev and cleanup
     println!("🚀 Merging task branch into dev...");
-    git::checkout("dev")?;
+    if let Err(e) = git::checkout("dev") {
+        println!("ℹ️  'dev' branch not found. Creating it... ({})", e);
+        git::create_branch("dev")?;
+    }
     git::merge(&current_branch)?;
     
     println!("🧹 Deleting task branch {}...", current_branch);

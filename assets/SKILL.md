@@ -66,6 +66,18 @@ Standardize the release process from `dev` to `main` with automated CI/CD.
 .agent/skills/taskflow/bin/taskflow status
 ```
 
+## Bootstrapping a New Project
+If you are starting a brand new project (empty repository):
+
+1. **First Open**: Run `taskflow open "initial task"`. It will detect the empty repo and skip the `dev` branch check.
+2. **First Close**: Run `taskflow close ...`. It will detect the missing `dev` branch and create it for you from your first task's commit.
+
+## Remote Synchronization Behavior
+The tool provides visual feedback for remote operations:
+- **ℹ️ Information**: Remote not configured for the repository. The tool will skip pushing without erroring.
+- **⚠️ Warning**: Remote exists but communication failed (e.g., authentication or network issues).
+- **✅ Success**: Changes successfully synced with the remote.
+
 ## File Structure
 ```
 .agent/skills/taskflow/
