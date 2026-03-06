@@ -5,6 +5,7 @@
 
 - **Automated Branching**: `open` command handles branching from `dev` and immediate changelog "locking".
 - **Remote Synchronization**: `close` and `release` commands automatically push changes to remote repositories.
+- **Prompt Coaching**: `close` command enforces generation of a prompt coaching report (`docs/prompt-coaching/<task-id>.md`) that analyzes the user's instruction quality, helping users improve their context engineering skills over time.
 - **GitHub-Integrated Releases**: Automated CI/CD (GitHub Actions) for cross-platform binary distribution on Tag creation.
 - **Structured Git Commits**: Enforces Conventional Commits with Task IDs integrated into the message.
 - **Streamlined Distribution**: 

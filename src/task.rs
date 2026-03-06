@@ -166,6 +166,25 @@ pub fn close_task(
         commit_msg.push_str(&f);
     }
 
+    // Hard Gate: Verify prompt coaching document exists before allowing close.
+    // This prevents LLMs from skipping the coaching step in long contexts,
+    // since SKILL.md instructions alone are not reliable enough as a guarantee.
+    let coaching_file = {
+        let mut p = std::env::current_dir()?;
+        p.push("docs");
+        p.push("prompt-coaching");
+        p.push(format!("{}.md", task_id));
+        p
+    };
+    if !coaching_file.exists() {
+        return Err(anyhow!(
+            "Prompt coaching document not found: {:?}\n\
+             You MUST generate a prompt coaching report before closing the task.\n\
+             Expected path: docs/prompt-coaching/{}.md",
+            coaching_file, task_id
+        ));
+    }
+
     if auto_stage {
         println!("Auto-staging all modified files (git add .)...");
         git::git_add_all()?;

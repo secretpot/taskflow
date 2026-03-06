@@ -32,7 +32,8 @@ Use the absolute path to the binary appropriate for your operating system (e.g.,
 **MANDATORY PRE-CLOSE CHECKLIST**:
 1. **Update Documentation**: **ALL** relevant files in `.agent/docs/project/` MUST be updated to reflect current implementation.
 2. **Verification**: Confirm all tests pass and lints are clean.
-3. **Staging**: Stage relevant files (auto-staging is enabled by default).
+3. **Prompt Coaching**: Generate a prompt coaching report at `docs/prompt-coaching/<task-id>.md` (see [Prompt Coaching](#prompt-coaching)). **The `close` command will REJECT the operation if this file is missing.**
+4. **Staging**: Stage relevant files (auto-staging is enabled by default).
 
 ```bash
 <path_to_binary> close "<type>" "<scope>" "<subject>" "<body>" "[footer]"
@@ -75,3 +76,71 @@ All commits follow this format:
 - **MUST** use a bulleted list (using `-`).
 - Each point **MUST** be on a new line.
 - Wrap at 72 characters per line.
+
+## Prompt Coaching
+
+**Purpose**: Analyze the user's instruction quality throughout the conversation and generate actionable feedback to improve their context engineering skills. The goal is to reduce future conversation turns, cognitive load, and LLM token consumption.
+
+**Output Path**: `docs/prompt-coaching/<task-id>.md`
+
+**CRITICAL**: The `close` command performs a **hard gate check** on this file. If the file does not exist, the close operation will fail. You MUST generate this document before running `close`.
+
+### Analysis Dimensions
+
+Evaluate the user's prompts across these four dimensions:
+
+| Dimension | Description | Key Questions |
+|---|---|---|
+| Context Completeness | Whether sufficient background was provided | Was critical context missing? Were assumptions required? Was information disclosed progressively and logically? |
+| Instruction Clarity | Semantic precision of the task directives | Were instructions unambiguous? Was structured formatting used (lists, headings)? Were success criteria defined? |
+| Requirement Evolution | How requirements changed during the conversation | Were changes abrupt or well-motivated? Did communication gaps cause rework? |
+| Conversation Efficiency | Whether unnecessary clarification rounds occurred | Could any back-and-forth have been avoided with better upfront context? |
+
+### Grading Rubric
+
+Use discrete letter grades for each dimension:
+
+| Grade | Meaning |
+|---|---|
+| **A** | Excellent. No improvement needed. |
+| **B** | Good. Minor improvements possible. |
+| **C** | Adequate. Notable gaps that caused friction. |
+| **D** | Poor. Significant issues that led to wasted effort. |
+
+### Output Template
+
+Use the following markdown structure:
+
+```markdown
+# Prompt Coaching: [task-id]
+
+## Conversation Overview
+<!-- 1-2 sentence summary of what was accomplished -->
+
+## Evaluation
+
+| Dimension | Grade | Summary |
+|---|---|---|
+| Context Completeness | _ | ... |
+| Instruction Clarity | _ | ... |
+| Requirement Evolution | _ | ... |
+| Conversation Efficiency | _ | ... |
+
+## Detailed Analysis
+<!-- For each dimension graded B or below, provide:
+     1. What happened (specific example from conversation)
+     2. What could have been done differently
+     3. Suggested rewrite or approach -->
+
+## Actionable Takeaways
+<!-- Bulleted list of 2-5 concrete, specific improvements.
+     Each must be actionable (start with a verb). -->
+```
+
+### Rules
+
+1. **User-scope only**: Evaluate only what the user could have controlled. Do NOT critique the agent's own failures.
+2. **Be specific**: Every piece of feedback must reference a concrete moment in the conversation. Avoid generic advice.
+3. **Be constructive**: Frame all feedback as opportunities, not criticisms.
+4. **Proportional response**: If the conversation was short (1-2 turns) and instructions were clear, output a brief positive acknowledgment rather than forcing analysis.
+5. **No fluff**: Do not pad the document with boilerplate praise. Every sentence must carry information.

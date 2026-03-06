@@ -1,11 +1,10 @@
 # CHANGELOG
-<!-- CURRENT_TASK: 20260306-174351 -->
 
 ## [20260306-174351] Add prompt coaching feature with Hard Gate enforcement
 - **开始时间**: 2026-03-06 17:43:51
-- **完成时间**: (进行中)
-- **类型**: (待定)
-- **描述**: (待补充)
+- **完成时间**: 2026-03-06 17:47:15
+- **类型**: feat(coaching)
+- **描述**: add prompt coaching with hard gate enforcement
 
 ## [20260127-181716] Fix GitHub Actions release permissions
 - **开始时间**: 2026-01-27 18:17:16

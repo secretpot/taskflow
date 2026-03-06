@@ -16,5 +16,6 @@ The tool is built as a modular Rust CLI application.
 - **Branching Model (Main/Dev)**: Adopted a standard branching model where `main` is the stable release branch and `dev` is for active development.
 - **Immediate Task Locking**: `open` command performs an immediate `chore` commit to prevent changelog data loss across branch switches.
 - **Automated Publishing**: GitHub Actions triggered by tags reduce manual build errors and ensure consistent release quality.
+- **Prompt Coaching (Soft Guide + Hard Gate)**: The prompt coaching analysis is performed by the AI agent (which has conversation context), not the Rust binary. However, the binary enforces a **hard gate** in `close_task` that checks for the coaching document's existence (`docs/prompt-coaching/<task-id>.md`), preventing LLMs from skipping the step in long contexts.
 - **PWD over Script Dir**: Solves the "skill-to-project" mismatch.
 - **Asset Separation**: `SKILL.md` is moved to `assets/` to keep the root directory clean.
