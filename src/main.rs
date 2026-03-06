@@ -20,6 +20,9 @@ enum Commands {
         description: String,
         /// Optional branch slug
         slug: Option<String>,
+        /// Optional language preference for prompt coaching (e.g. zh, en)
+        #[arg(long)]
+        lang: Option<String>,
     },
     /// Close the current task
     Close {
@@ -51,8 +54,8 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Open { description, slug } => {
-            task::open_task(&description, slug.as_deref())?;
+        Commands::Open { description, slug, lang } => {
+            task::open_task(&description, slug.as_deref(), lang.as_deref())?;
         }
         Commands::Close { r#type, scope, subject, body, footer, auto_stage } => {
             task::close_task(&r#type, Some(scope), &subject, &body, Some(footer), auto_stage)?;

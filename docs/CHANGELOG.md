@@ -1,11 +1,10 @@
 # CHANGELOG
-<!-- CURRENT_TASK: 20260306-192346 -->
 
 ## [20260306-192346] Add multi-language support to prompt coaching with --lang flag and metadata storage
 - **开始时间**: 2026-03-06 19:23:46
-- **完成时间**: (进行中)
-- **类型**: (待定)
-- **描述**: (待补充)
+- **完成时间**: 2026-03-06 19:24:57
+- **类型**: feat(coaching)
+- **描述**: add multi-language support to prompt coaching
 
 ## [20260306-174351] Add prompt coaching feature with Hard Gate enforcement
 - **开始时间**: 2026-03-06 17:43:51

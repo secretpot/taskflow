@@ -12,7 +12,7 @@ pub fn get_changelog_path() -> Result<PathBuf> {
     Ok(path)
 }
 
-pub fn open_task(description: &str, slug: Option<&str>) -> Result<()> {
+pub fn open_task(description: &str, slug: Option<&str>, lang: Option<&str>) -> Result<()> {
     let current_branch = git::get_current_branch()?;
     if current_branch.starts_with("task/") {
         return Err(anyhow!("You are already on a task branch ({})! Please close it before opening a new one.", current_branch));
@@ -58,9 +58,10 @@ pub fn open_task(description: &str, slug: Option<&str>) -> Result<()> {
     println!("🌿 Creating and switching to branch {}...", branch_name);
     git::create_branch(&branch_name)?;
 
+    let lang_suffix = lang.map(|l| format!(" [lang:{}]", l)).unwrap_or_default();
     let mut new_content = format!(
-        "# CHANGELOG\n<!-- CURRENT_TASK: {} -->\n\n## [{}] {}\n- **开始时间**: {}\n- **完成时间**: (进行中)\n- **类型**: (待定)\n- **描述**: (待补充)\n\n",
-        task_id, task_id, description, current_time
+        "# CHANGELOG\n<!-- CURRENT_TASK: {}{} -->\n\n## [{}] {}\n- **开始时间**: {}\n- **完成时间**: (进行中)\n- **类型**: (待定)\n- **描述**: (待补充)\n\n",
+        task_id, lang_suffix, task_id, description, current_time
     );
 
     // Skip the old header if it exists
@@ -289,7 +290,16 @@ pub fn status() -> Result<()> {
         return Ok(());
     }
     
-    let task_id = captures.unwrap().get(1).unwrap().as_str();
+    let marker_content = captures.unwrap().get(1).unwrap().as_str();
+    
+    // Parse task_id and optional language metadata
+    // Format: "ID" or "ID [lang:zh]"
+    let re_id_lang = Regex::new(r"^([^\s]+)(?:\s+\[lang:([^\]]+)\])?$")?;
+    let id_lang_caps = re_id_lang.captures(marker_content)
+        .ok_or_else(|| anyhow!("Invalid task marker format"))?;
+    
+    let task_id = id_lang_caps.get(1).unwrap().as_str();
+    let language = id_lang_caps.get(2).map(|m| m.as_str());
 
     let re_desc = Regex::new(&format!(r"## \[{}\] (.*)", regex::escape(task_id)))?;
     let description = re_desc.captures(&content)
@@ -301,6 +311,9 @@ pub fn status() -> Result<()> {
     println!("Task ID:     {}", task_id);
     println!("Branch:      {}", branch);
     println!("Description: {}", description);
+    if let Some(l) = language {
+        println!("Language:    {}", l);
+    }
 
     Ok(())
 }

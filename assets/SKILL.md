@@ -22,7 +22,7 @@ Use the absolute path to the binary appropriate for your operating system (e.g.,
 **Project Impact**: Switches to a task-specific branch and initializes a tracked CHANGELOG entry.
 
 ```bash
-<path_to_binary> open "Brief task description" [optional-slug]
+<path_to_binary> open "Brief task description" [optional-slug] [--lang <lang-code>]
 ```
 
 ### 2. Close a Task
@@ -144,3 +144,7 @@ Use the following markdown structure:
 3. **Be constructive**: Frame all feedback as opportunities, not criticisms.
 4. **Proportional response**: If the conversation was short (1-2 turns) and instructions were clear, output a brief positive acknowledgment rather than forcing analysis.
 5. **No fluff**: Do not pad the document with boilerplate praise. Every sentence must carry information.
+6. **Language Alignment**: Check the `CHANGELOG.md` for the current task's language metadata (e.g., `[lang:zh]`).
+    - If specified, generate the report in that language.
+    - If not specified, detect and use the primary language used by the user in the current conversation.
+    - Fallback to **English** if the language is unclear or not detected.
