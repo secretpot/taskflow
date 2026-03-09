@@ -6,11 +6,11 @@ setlocal enabledelayedexpansion
 
 echo 🚀 Installing taskflow for Windows...
 
-set BINARY_SRC=dist\windows_amd64\taskflow\bin\taskflow.exe
+set BINARY_SRC=%~dp0..\bin\taskflow.exe
 
 if not exist "!BINARY_SRC!" (
     echo ❌ Binary not found at !BINARY_SRC!
-    echo Please run 'scripts\build.bat' first.
+    echo Please run 'scripts\build.sh' first.
     exit /b 1
 )
 

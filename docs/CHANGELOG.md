@@ -1,11 +1,10 @@
 # CHANGELOG
-<!-- CURRENT_TASK: 20260309-141943 [topic:install-release-sync] -->
 
 ## [20260309-141943] Optimize installation scripts for release package structure
 - **开始时间**: 2026-03-09 14:19:43
-- **完成时间**: (进行中)
-- **类型**: (待定)
-- **描述**: (待补充)
+- **完成时间**: 2026-03-09 14:21:12
+- **类型**: feat(installation)
+- **描述**: optimize installation for release package structure
 
 ## [20260309-135916] Sync coaching report filename with branch pattern <topic>-<task-id>
 - **开始时间**: 2026-03-09 13:59:16

@@ -35,6 +35,7 @@ package() {
     echo "📦 Packaging for ${TARGET_PLATFORM} -> ${DIST_DIR}"
     
     mkdir -p "${DIST_DIR}/bin"
+    mkdir -p "${DIST_DIR}/scripts"
     
     if [ "$IS_WINDOWS" = true ]; then
         cp "$BIN_SRC" "${DIST_DIR}/bin/taskflow.exe"
@@ -43,6 +44,8 @@ package() {
     fi
     
     cp "assets/SKILL.md" "${DIST_DIR}/SKILL.md"
+    cp "scripts/install.sh" "${DIST_DIR}/scripts/install.sh"
+    cp "scripts/install.bat" "${DIST_DIR}/scripts/install.bat"
 }
 
 build_and_package() {

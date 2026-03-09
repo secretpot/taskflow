@@ -20,7 +20,8 @@ case "$ARCH_TYPE" in
 esac
 
 PLATFORM="${OS}_${ARCH}"
-BINARY_SRC="dist/${PLATFORM}/taskflow/bin/taskflow"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+BINARY_SRC="${SCRIPT_DIR}/../bin/taskflow"
 TARGET_DIR="/usr/local/bin"
 TARGET_PATH="${TARGET_DIR}/taskflow"
 
