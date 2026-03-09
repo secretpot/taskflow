@@ -1,4 +1,11 @@
 # CHANGELOG
+<!-- CURRENT_TASK: 20260309-135916 -->
+
+## [20260309-135916] Sync coaching report filename with branch pattern <topic>-<task-id>
+- **开始时间**: 2026-03-09 13:59:16
+- **完成时间**: (进行中)
+- **类型**: (待定)
+- **描述**: (待补充)
 
 ## [20260309-135103] Optimize task naming (topic vs slug) and add --version support
 - **开始时间**: 2026-03-09 13:51:03
