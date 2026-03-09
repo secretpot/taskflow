@@ -617,19 +617,19 @@ fn close_task_parallel(
         println!("Warning: No staged changes found. Skipping git commit.");
     }
 
-    // Merge into base branch from the management root
+    // Merge into base branch worktree
     println!("🚀 Merging task branch into {}...", cfg.base_branch);
-    git::checkout_in(&management_root, &cfg.base_branch)?;
-    git::merge_in(&management_root, &current_branch)?;
+    let base_worktree_root = management_root.join(&cfg.base_branch);
+    git::merge_in(&base_worktree_root, &current_branch)?;
 
     // Remove worktree and delete branch
     println!("🧹 Removing worktree and cleaning up...");
     git::worktree_remove(&worktree_root)?;
-    git::delete_branch(&current_branch)?;
+    git::delete_branch_in(&management_root, &current_branch)?;
 
     // Push base branch
     println!("📤 Syncing {} with remote...", cfg.base_branch);
-    git::push("origin", &cfg.base_branch, false)?;
+    git::push_in(&management_root, "origin", &cfg.base_branch, false)?;
 
     println!("✓ Task CLOSED successfully (Parallel mode)");
     println!("Task ID: {}", task_id);

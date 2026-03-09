@@ -331,6 +331,37 @@ pub fn merge_in(dir: &std::path::Path, branch: &str) -> Result<()> {
 }
 
 /// Checkout a branch from a specific directory.
+#[allow(dead_code)]
 pub fn checkout_in(dir: &std::path::Path, branch: &str) -> Result<()> {
     run_git_in(dir, &["checkout", branch])
+}
+
+/// Delete a branch from a specific directory.
+pub fn delete_branch_in(dir: &std::path::Path, branch: &str) -> Result<()> {
+    let status = Command::new("git")
+        .current_dir(dir)
+        .arg("branch")
+        .arg("-D")
+        .arg(branch)
+        .status()?;
+    
+    if !status.success() {
+        println!("Warning: git branch -D {} failed in {:?}. Continuing...", branch, dir);
+    }
+    Ok(())
+}
+
+/// Push a branch from a specific directory.
+pub fn push_in(dir: &std::path::Path, remote: &str, branch: &str, tags: bool) -> Result<()> {
+    let mut cmd = Command::new("git");
+    cmd.current_dir(dir).arg("push").arg(remote).arg(branch);
+    if tags {
+        cmd.arg("--tags");
+    }
+    let status = cmd.status()?;
+    
+    if !status.success() {
+        println!("Warning: git push {} {} failed in {:?}. Continuing...", remote, branch, dir);
+    }
+    Ok(())
 }
