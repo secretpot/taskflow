@@ -3,6 +3,7 @@ use anyhow::Result;
 
 mod task;
 mod git;
+mod config;
 
 #[derive(Parser)]
 #[command(name = "taskflow")]
@@ -50,6 +51,12 @@ enum Commands {
     },
     /// Get current task status (获取当前任务状态)
     Status,
+    /// Initialize parallel task management (初始化并行任务管理)
+    Init {
+        /// Base branch name, auto-detected from current branch if omitted (基础分支名称，省略则自动从当前分支检测)
+        #[arg(long)]
+        branch: Option<String>,
+    },
 }
 
 fn main() -> Result<()> {
@@ -67,6 +74,9 @@ fn main() -> Result<()> {
         }
         Commands::Status => {
             task::status()?;
+        }
+        Commands::Init { branch } => {
+            task::init_parallel(branch.as_deref())?;
         }
     }
 

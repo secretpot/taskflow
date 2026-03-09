@@ -26,7 +26,9 @@ Once installed, use the command as described below.
 
 ### 1. Open a New Task
 **Intent**: Initialize the development context for a new piece of work.
-**Project Impact**: Switches to a task-specific branch (patterns: `task/<topic>-<task-id>` or `task/<task-id>`) and initializes a tracked CHANGELOG entry.
+**Project Impact**:
+- **Classic mode**: Switches to a task-specific branch and initializes a tracked CHANGELOG entry.
+- **Parallel mode**: Creates a new worktree under `tasks/` and outputs `WORKTREE_PATH:`. You MUST `cd` to that path for all subsequent work.
 
 ```bash
 taskflow open "Brief task description" [topic] [--lang <lang-code>]
@@ -37,7 +39,9 @@ taskflow open "Brief task description" [topic] [--lang <lang-code>]
 
 ### 2. Close a Task
 **Intent**: Finalize work and integrate it into the main development branch.
-**Project Impact**: Commits staged changes, merges to `dev`, deletes the local task branch, and pushes to origin.
+**Project Impact**:
+- **Classic mode**: Commits staged changes, merges to `dev`, deletes the task branch, and pushes to origin.
+- **Parallel mode**: Commits, merges to the configured base branch, removes the worktree, and pushes. Return to the management root after close.
 
 **MANDATORY PRE-CLOSE CHECKLIST**:
 1. **Update Documentation**: **ALL** relevant files in `.agent/docs/project/` MUST be updated to reflect current implementation.
@@ -59,11 +63,29 @@ taskflow release <version>
 
 ### 4. Get Current Task Status
 **Intent**: Verify the active developmental context.
-**Project Impact**: Returns the current Task ID and branch name. Always returns code 0 if the tool is initialized.
+**Project Impact**: In Classic mode, returns the current Task ID and branch. In Parallel mode, lists all active task worktrees.
 
 ```bash
 taskflow status
 ```
+
+### 5. Initialize Parallel Mode
+**Intent**: Convert a repository into a management root for multi-agent parallel development.
+**Project Impact**: Creates `.agent/config.toml`, a base branch worktree, and a `tasks/` directory. One-time setup.
+
+```bash
+taskflow init [--branch <base-branch-name>]
+```
+
+If `--branch` is omitted, the current branch is auto-detected and used as the base branch.
+
+## Parallel Mode: Agent Guidance
+
+When working in a project initialized with `taskflow init`:
+
+1. **After `taskflow open`**: The output contains a `WORKTREE_PATH:` line. You MUST change your working directory to that path. All file edits, test runs, and commits happen inside the worktree.
+2. **After `taskflow close`**: The worktree is removed. Return to the management root directory.
+3. **File paths**: Always use paths relative to the worktree root, not the management root.
 
 ## Side Effects & Remote Sync
 The tool automatically manages remote synchronization:
