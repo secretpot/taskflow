@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## [1.0.4] - 2026-03-09
+### Added
+- **Semantic Naming**: Branches and Prompt Coaching reports now use `<topic>-<task-id>` format for better traceability.
+- **Enhanced Metadata**: CHANGELOG metadata now persists `topic` and `lang` preferences.
+- **Improved Installation**: Release packages now include a `scripts/` directory with standalone installers supporting relative path (`../bin/`) lookup.
+- **Multi-platform Distribution**: Added `build.sh --all` to generate artifacts for macOS, Linux, and Windows.
+
+### Fixed
+- **Atomic Hard Gate**: Repositioned the Prompt Coaching check to occur BEFORE modifying the CHANGELOG, ensuring task state integrity on failure.
+
 ## [20260309-141943] Optimize installation scripts for release package structure
 - **开始时间**: 2026-03-09 14:19:43
 - **完成时间**: 2026-03-09 14:21:12
