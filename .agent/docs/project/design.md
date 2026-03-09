@@ -29,7 +29,7 @@ The tool is built as a modular Rust CLI application.
 
 ## Key Decisions
 - **Dual-Mode Design**: Preserves backward compatibility for single-agent users (Classic) while enabling parallel development (Parallel) via `taskflow init`. Mode is detected automatically from config presence.
-- **Detached HEAD in Management Root**: During `init`, the management root's HEAD is detached to free the base branch for worktree use. The management root becomes a "control plane" that is not directly used for development.
+- **Orphan Branch Management Root**: During `init`, a new orphan branch (`taskflow-root`) is created, and all tracked source files are removed from the management root. The management root becomes a clean "control plane" that is not directly used for development, only containing config and `.gitignore`.
 - **Auto-detected Base Branch**: `init` auto-detects the current branch as `base_branch` (with explicit user confirmation), or accepts `--branch` for explicit specification. Stored in `.agent/config.toml`.
 - **Config in .agent/**: Configuration is stored in `.agent/config.toml` alongside existing `.agent/docs/` project documentation, maintaining a single management directory.
 - **Branching Model (Main/Dev)**: Adopted a standard branching model where `main` is the stable release branch and `dev` (or user-configured base branch) is for active development.
