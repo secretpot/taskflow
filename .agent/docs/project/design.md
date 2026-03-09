@@ -15,7 +15,7 @@ The tool is built as a modular Rust CLI application.
 ## Key Decisions
 - **Branching Model (Main/Dev)**: Adopted a standard branching model where `main` is the stable release branch and `dev` is for active development.
 - **Immediate Task Locking**: `open` command performs an immediate `chore` commit to prevent changelog data loss across branch switches.
-- **Semantic Branch Naming**: Branches are named `task/<topic>-<MMDD>` for better readability when a topic is provided, falling back to `task/<YYYYMMDD-HHMMSS>` for absolute uniqueness.
+- **Semantic Branch & Report Naming**: Branches and Prompt Coaching reports are named `<topic>-<task-id>` for semantic clarity and full traceability, falling back to `<task-id>` if no topic is provided.
 - **Automated Publishing**: GitHub Actions triggered by tags reduce manual build errors and ensure consistent release quality.
 - **Prompt Coaching (Soft Guide + Hard Gate)**: The prompt coaching analysis is performed by the AI agent (which has conversation context), not the Rust binary. The binary enforces a **hard gate** in `close_task` by checking for the report's existence. It also supports **multi-language alignment** by storing an optional language preference in the CHANGELOG metadata (`[lang:zh]`) during `open_task`, which the agent then follows.
 - **Bilingual & Detailed Help**: CLI help text is explicitly bilingual (EN/ZH) and detailed to serve as a self-documenting "AI primitive" within agentic loops.

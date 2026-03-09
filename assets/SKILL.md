@@ -26,7 +26,7 @@ Once installed, use the command as described below.
 
 ### 1. Open a New Task
 **Intent**: Initialize the development context for a new piece of work.
-**Project Impact**: Switches to a task-specific branch (patterns: `task/<topic>-MMDD` or `task/YYYYMMDD-HHMMSS`) and initializes a tracked CHANGELOG entry.
+**Project Impact**: Switches to a task-specific branch (patterns: `task/<topic>-<task-id>` or `task/<task-id>`) and initializes a tracked CHANGELOG entry.
 
 ```bash
 taskflow open "Brief task description" [topic] [--lang <lang-code>]
@@ -42,7 +42,7 @@ taskflow open "Brief task description" [topic] [--lang <lang-code>]
 **MANDATORY PRE-CLOSE CHECKLIST**:
 1. **Update Documentation**: **ALL** relevant files in `.agent/docs/project/` MUST be updated to reflect current implementation.
 2. **Verification**: Confirm all tests pass and lints are clean.
-3. **Prompt Coaching**: Generate a prompt coaching report at `docs/prompt-coaching/<task-id>.md` (see [Prompt Coaching](#prompt-coaching)). **The `close` command will REJECT the operation if this file is missing.**
+3. **Prompt Coaching**: Generate a prompt coaching report at `docs/prompt-coaching/<topic>-<task-id>.md` (see [Prompt Coaching](#prompt-coaching)). **The `close` command will REJECT the operation if this file is missing.**
 4. **Staging**: Stage relevant files (auto-staging is enabled by default).
 
 ```bash
@@ -91,7 +91,7 @@ All commits follow this format:
 
 **Purpose**: Analyze the user's instruction quality throughout the conversation and generate actionable feedback to improve their context engineering skills. The goal is to reduce future conversation turns, cognitive load, and LLM token consumption.
 
-**Output Path**: `docs/prompt-coaching/<task-id>.md`
+**Output Path**: `docs/prompt-coaching/<topic>-<task-id>.md` (or `docs/prompt-coaching/<task-id>.md` if no topic was provided)
 
 **CRITICAL**: The `close` command performs a **hard gate check** on this file. If the file does not exist, the close operation will fail. You MUST generate this document before running `close`.
 

@@ -47,12 +47,11 @@ pub fn open_task(description: &str, topic: Option<&str>, lang: Option<&str>) -> 
     }
 
     let task_id = Local::now().format("%Y%m%d-%H%M%S").to_string();
-    let short_date = Local::now().format("%m%d").to_string();
     let current_time = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
 
     // Create branch
     let branch_name = if let Some(t) = topic {
-        format!("task/{}-{}", t, short_date)
+        format!("task/{}-{}", t, task_id)
     } else {
         format!("task/{}", task_id)
     };
@@ -60,9 +59,10 @@ pub fn open_task(description: &str, topic: Option<&str>, lang: Option<&str>) -> 
     git::create_branch(&branch_name)?;
 
     let lang_suffix = lang.map(|l| format!(" [lang:{}]", l)).unwrap_or_default();
+    let topic_suffix = topic.map(|t| format!(" [topic:{}]", t)).unwrap_or_default();
     let mut new_content = format!(
-        "# CHANGELOG\n<!-- CURRENT_TASK: {}{} -->\n\n## [{}] {}\n- **开始时间**: {}\n- **完成时间**: (进行中)\n- **类型**: (待定)\n- **描述**: (待补充)\n\n",
-        task_id, lang_suffix, task_id, description, current_time
+        "# CHANGELOG\n<!-- CURRENT_TASK: {}{}{} -->\n\n## [{}] {}\n- **开始时间**: {}\n- **完成时间**: (进行中)\n- **类型**: (待定)\n- **描述**: (待补充)\n\n",
+        task_id, lang_suffix, topic_suffix, task_id, description, current_time
     );
 
     // Skip the old header if it exists
@@ -107,9 +107,44 @@ pub fn close_task(
         .context("CHANGELOG.md not found. Have you opened a task?")?;
 
     let re_marker = Regex::new(r"<!-- CURRENT_TASK: (.*) -->")?;
-    let task_id = re_marker.captures(&content)
+    let marker_content = re_marker.captures(&content)
         .ok_or_else(|| anyhow!("No active task found in CHANGELOG.md"))?
         .get(1).unwrap().as_str().to_string();
+
+    // Parse task_id and optional metadata
+    // Format: "ID" or "ID [lang:zh] [topic:my-topic]"
+    let re_id = Regex::new(r"^([^\s]+)")?;
+    let task_id = re_id.captures(&marker_content)
+        .ok_or_else(|| anyhow!("Invalid task marker format"))?
+        .get(1).unwrap().as_str().to_string();
+
+    let re_topic = Regex::new(r"\[topic:([^\]]+)\]")?;
+    let topic = re_topic.captures(&marker_content)
+        .map(|c| c.get(1).unwrap().as_str());
+
+    // Hard Gate: Verify prompt coaching document exists before allowing close.
+    // We check this BEFORE modifying any files to ensure atomicity.
+    let coaching_filename = if let Some(t) = topic {
+        format!("{}-{}.md", t, task_id)
+    } else {
+        format!("{}.md", task_id)
+    };
+
+    let coaching_file = {
+        let mut p = std::env::current_dir()?;
+        p.push("docs");
+        p.push("prompt-coaching");
+        p.push(&coaching_filename);
+        p
+    };
+    if !coaching_file.exists() {
+        return Err(anyhow!(
+            "Prompt coaching document not found: {:?}\n\
+             You MUST generate a prompt coaching report before closing the task.\n\
+             Expected path: docs/prompt-coaching/{}",
+            coaching_file, coaching_filename
+        ));
+    }
 
     let current_time = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
 
@@ -166,25 +201,6 @@ pub fn close_task(
     if let Some(f) = footer_filtered {
         commit_msg.push_str("\n\n");
         commit_msg.push_str(&f);
-    }
-
-    // Hard Gate: Verify prompt coaching document exists before allowing close.
-    // This prevents LLMs from skipping the coaching step in long contexts,
-    // since SKILL.md instructions alone are not reliable enough as a guarantee.
-    let coaching_file = {
-        let mut p = std::env::current_dir()?;
-        p.push("docs");
-        p.push("prompt-coaching");
-        p.push(format!("{}.md", task_id));
-        p
-    };
-    if !coaching_file.exists() {
-        return Err(anyhow!(
-            "Prompt coaching document not found: {:?}\n\
-             You MUST generate a prompt coaching report before closing the task.\n\
-             Expected path: docs/prompt-coaching/{}.md",
-            coaching_file, task_id
-        ));
     }
 
     if auto_stage {
@@ -293,14 +309,20 @@ pub fn status() -> Result<()> {
     
     let marker_content = captures.unwrap().get(1).unwrap().as_str();
     
-    // Parse task_id and optional language metadata
-    // Format: "ID" or "ID [lang:zh]"
-    let re_id_lang = Regex::new(r"^([^\s]+)(?:\s+\[lang:([^\]]+)\])?$")?;
-    let id_lang_caps = re_id_lang.captures(marker_content)
+    // Parse task_id and optional metadata
+    // Format: "ID [lang:zh] [topic:my-topic]"
+    let re_id = Regex::new(r"^([^\s]+)")?;
+    let id_caps = re_id.captures(marker_content)
         .ok_or_else(|| anyhow!("Invalid task marker format"))?;
-    
-    let task_id = id_lang_caps.get(1).unwrap().as_str();
-    let language = id_lang_caps.get(2).map(|m| m.as_str());
+    let task_id = id_caps.get(1).unwrap().as_str();
+
+    let re_lang = Regex::new(r"\[lang:([^\]]+)\]")?;
+    let language = re_lang.captures(marker_content)
+        .map(|c| c.get(1).unwrap().as_str());
+
+    let re_topic = Regex::new(r"\[topic:([^\]]+)\]")?;
+    let topic = re_topic.captures(marker_content)
+        .map(|c| c.get(1).unwrap().as_str());
 
     let re_desc = Regex::new(&format!(r"## \[{}\] (.*)", regex::escape(task_id)))?;
     let description = re_desc.captures(&content)
@@ -314,6 +336,9 @@ pub fn status() -> Result<()> {
     println!("Description: {}", description);
     if let Some(l) = language {
         println!("Language:    {}", l);
+    }
+    if let Some(t) = topic {
+        println!("Topic:       {}", t);
     }
 
     Ok(())
