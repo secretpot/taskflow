@@ -26,11 +26,14 @@ Once installed, use the command as described below.
 
 ### 1. Open a New Task
 **Intent**: Initialize the development context for a new piece of work.
-**Project Impact**: Switches to a task-specific branch and initializes a tracked CHANGELOG entry.
+**Project Impact**: Switches to a task-specific branch (patterns: `task/<topic>-MMDD` or `task/YYYYMMDD-HHMMSS`) and initializes a tracked CHANGELOG entry.
 
 ```bash
-taskflow open "Brief task description" [optional-slug] [--lang <lang-code>]
+taskflow open "Brief task description" [topic] [--lang <lang-code>]
 ```
+
+> [!TIP]
+> Use `taskflow --version` to check the current tool version.
 
 ### 2. Close a Task
 **Intent**: Finalize work and integrate it into the main development branch.

@@ -12,7 +12,7 @@ pub fn get_changelog_path() -> Result<PathBuf> {
     Ok(path)
 }
 
-pub fn open_task(description: &str, slug: Option<&str>, lang: Option<&str>) -> Result<()> {
+pub fn open_task(description: &str, topic: Option<&str>, lang: Option<&str>) -> Result<()> {
     let current_branch = git::get_current_branch()?;
     if current_branch.starts_with("task/") {
         return Err(anyhow!("You are already on a task branch ({})! Please close it before opening a new one.", current_branch));
@@ -47,11 +47,12 @@ pub fn open_task(description: &str, slug: Option<&str>, lang: Option<&str>) -> R
     }
 
     let task_id = Local::now().format("%Y%m%d-%H%M%S").to_string();
+    let short_date = Local::now().format("%m%d").to_string();
     let current_time = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
 
     // Create branch
-    let branch_name = if let Some(s) = slug {
-        format!("task/{}-{}", task_id, s)
+    let branch_name = if let Some(t) = topic {
+        format!("task/{}-{}", t, short_date)
     } else {
         format!("task/{}", task_id)
     };
