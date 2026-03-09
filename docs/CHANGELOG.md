@@ -1,11 +1,10 @@
 # CHANGELOG
-<!-- CURRENT_TASK: 20260309-112409 -->
 
 ## [20260309-112409] Global installation with bilingual help support and agent self-healing logic
 - **开始时间**: 2026-03-09 11:24:09
-- **完成时间**: (进行中)
-- **类型**: (待定)
-- **描述**: (待补充)
+- **完成时间**: 2026-03-09 13:14:13
+- **类型**: feat(installation)
+- **描述**: global installation and bilingual help support
 
 ## [20260306-192346] Add multi-language support to prompt coaching with --lang flag and metadata storage
 - **开始时间**: 2026-03-06 19:23:46

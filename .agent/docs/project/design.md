@@ -17,5 +17,7 @@ The tool is built as a modular Rust CLI application.
 - **Immediate Task Locking**: `open` command performs an immediate `chore` commit to prevent changelog data loss across branch switches.
 - **Automated Publishing**: GitHub Actions triggered by tags reduce manual build errors and ensure consistent release quality.
 - **Prompt Coaching (Soft Guide + Hard Gate)**: The prompt coaching analysis is performed by the AI agent (which has conversation context), not the Rust binary. The binary enforces a **hard gate** in `close_task` by checking for the report's existence. It also supports **multi-language alignment** by storing an optional language preference in the CHANGELOG metadata (`[lang:zh]`) during `open_task`, which the agent then follows.
+- **Bilingual & Detailed Help**: CLI help text is explicitly bilingual (EN/ZH) and detailed to serve as a self-documenting "AI primitive" within agentic loops.
+- **Global Deployment & Agent Self-Healing**: Installation scripts (`install.sh`/`install.bat`) are provided to normalize the CLI path. `SKILL.md` includes logic for the Agent to auto-install the tool if it's missing, ensuring environmental robustness.
 - **PWD over Script Dir**: Solves the "skill-to-project" mismatch.
 - **Asset Separation**: `SKILL.md` is moved to `assets/` to keep the root directory clean.
