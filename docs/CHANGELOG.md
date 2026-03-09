@@ -1,4 +1,11 @@
 # CHANGELOG
+<!-- CURRENT_TASK: 20260309-175537 [topic:refactor-init] -->
+
+## [20260309-175537] Refactor init command to use orphan branch for clean management root
+- **开始时间**: 2026-03-09 17:55:37
+- **完成时间**: (进行中)
+- **类型**: (待定)
+- **描述**: (待补充)
 
 ## [20260309-154524] Add git worktree integration for parallel multi-agent development
 - **开始时间**: 2026-03-09 15:45:24

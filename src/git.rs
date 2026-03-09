@@ -172,6 +172,7 @@ pub fn push(remote: &str, branch: &str, include_tags: bool) -> Result<()> {
 /// Detach HEAD so the current branch can be used by a worktree.
 /// WHY: Git doesn't allow a branch to be checked out in two places.
 /// By detaching HEAD, we free the branch for worktree use.
+#[allow(dead_code)]
 pub fn detach_head() -> Result<()> {
     let status = Command::new("git")
         .arg("checkout")

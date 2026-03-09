@@ -29,6 +29,11 @@ pub fn init_parallel(branch: Option<&str>) -> Result<()> {
         return Err(anyhow!("Already initialized. Config exists at {:?}", config_path));
     }
 
+    // Reject if there are uncommitted changes to prevent dataloss
+    if git::has_staged_changes()? || !std::process::Command::new("git").arg("diff").arg("--quiet").status()?.success() {
+        return Err(anyhow!("You have uncommitted changes. Please commit or stash them before running 'init'."));
+    }
+
     // Resolve base branch
     let base_branch = match branch {
         Some(b) => {
@@ -42,13 +47,31 @@ pub fn init_parallel(branch: Option<&str>) -> Result<()> {
         }
     };
 
-    // Create .agent directory if it doesn't exist
-    let agent_dir = root.join(".agent");
-    if !agent_dir.exists() {
-        fs::create_dir_all(&agent_dir)?;
+    println!("🧹 Clearing management root and switching to 'taskflow-root' orphan branch...");
+    // Create orphan branch for management root
+    let status = std::process::Command::new("git")
+        .arg("checkout")
+        .arg("--orphan")
+        .arg("taskflow-root")
+        .status()?;
+    if !status.success() {
+        return Err(anyhow!("Failed to create orphan branch 'taskflow-root'."));
     }
 
-    // Write config
+    // Remove all tracked files from the working directory
+    let status = std::process::Command::new("git")
+        .arg("rm")
+        .arg("-rf")
+        .arg(".")
+        .status()?;
+    if !status.success() {
+        println!("Warning: 'git rm -rf .' reported an issue, possibly because the repo is already empty.");
+    }
+
+    // Create .agent directory and write config
+    let agent_dir = root.join(".agent");
+    fs::create_dir_all(&agent_dir)?;
+
     let config_content = format!(
         "mode = \"parallel\"\nbase_branch = \"{}\"\n",
         base_branch
@@ -58,26 +81,10 @@ pub fn init_parallel(branch: Option<&str>) -> Result<()> {
 
     // Create tasks directory
     let tasks_dir = root.join("tasks");
-    if !tasks_dir.exists() {
-        fs::create_dir_all(&tasks_dir)?;
-    }
+    fs::create_dir_all(&tasks_dir)?;
     println!("Created tasks directory: {:?}", tasks_dir);
 
-    // Create base branch worktree
-    let base_worktree_path = root.join(&base_branch);
-    if !base_worktree_path.exists() {
-        // WHY: Git prevents a branch from being checked out in two places.
-        // Detach HEAD in the management root so the base branch is free.
-        println!("Detaching HEAD in management root...");
-        git::detach_head()?;
-
-        println!("Creating worktree for base branch '{}'...", base_branch);
-        git::worktree_add_existing(&base_worktree_path, &base_branch)?;
-    } else {
-        println!("Base branch worktree already exists at {:?}", base_worktree_path);
-    }
-
-    // Update .gitignore
+    // Write management .gitignore
     let gitignore_path = root.join(".gitignore");
     let mut gitignore = if gitignore_path.exists() {
         fs::read_to_string(&gitignore_path)?
@@ -104,7 +111,32 @@ pub fn init_parallel(branch: Option<&str>) -> Result<()> {
 
     if modified {
         fs::write(&gitignore_path, gitignore)?;
-        println!("Updated .gitignore");
+        println!("Updated management .gitignore");
+    }
+
+    // Commit management skeleton
+    println!("💾 Committing management root skeleton...");
+    let add_status = std::process::Command::new("git")
+        .arg("add")
+        .arg(".agent/config.toml")
+        .arg(".gitignore")
+        .status()?;
+    if !add_status.success() {
+        return Err(anyhow!("Failed to stage management files."));
+    }
+    git::git_commit("chore: initialize taskflow management root")?;
+
+    // Output guidance for manual cleanup of untracked files
+    println!("\nℹ️  Note: Untracked files (e.g., target/, node_modules/, .env) were left in the root directory.");
+    println!("If you want to preserve build caches, move them into {}/ after setup.", base_branch);
+
+    // Create base branch worktree
+    let base_worktree_path = root.join(&base_branch);
+    if !base_worktree_path.exists() {
+        println!("🌿 Creating worktree for base branch '{}'...", base_branch);
+        git::worktree_add_existing(&base_worktree_path, &base_branch)?;
+    } else {
+        println!("Base branch worktree already exists at {:?}", base_worktree_path);
     }
 
     println!("\n--- Parallel mode initialized ---");
