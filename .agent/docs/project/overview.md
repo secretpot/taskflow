@@ -3,8 +3,9 @@
 ## Purpose
 `taskflow` is a CLI tool designed to manage the development lifecycle of agents. It ensures that every code change is tracked, documented in a CHANGELOG, and committed to Git with a standardized format.
 
-- **Dual-Mode Architecture**: Supports both Classic (single-branch) and Parallel (worktree-based) task management modes.
-- **Parallel Multi-Agent Development**: `init` command converts a repo into a management root with worktree-based isolation, enabling multiple agents to work concurrently.
+- **Unified Architecture**: Supports both Classic (single-branch) and Parallel (worktree-based) task management via a single `.agent/config.toml` configuration.
+- **Smart Release Engine**: The `release` command automatically detects development and main branches (e.g., `dev`->`main` or `develop`->`master`) and ensures `Cargo.lock` is atomically synchronized with version bumps.
+- **Parallel Multi-Agent Development**: `init` command converts a repo into a management root with worktree-based isolation.
 - **Automated Branching**: `open` command handles branching/worktree creation and immediate changelog "locking".
 - **Global Installation**: Provides `install.sh` (Unix) and `install.bat` (Windows) to install `taskflow` as a native CLI command.
 - **Bilingual CLI Help**: Full English and Chinese support in `--help` output for improved readability by both humans and agents.
@@ -21,9 +22,12 @@
 .
 ├── src/                # Rust source code
 │   ├── main.rs         # CLI entry point (clap)
-│   ├── task.rs         # Task lifecycle logic (open/close/init/status/release)
-│   ├── git.rs          # Git command wrappers (incl. worktree helpers)
-│   └── config.rs       # Mode detection and config parsing (.agent/config.toml)
+│   ├── task.rs         # Task lifecycle (open/close/init/status/release)
+│   ├── git.rs          # Git wrappers (branching, merging, worktrees)
+│   └── config.rs       # Unified config system & smart branch probing
+├── .agent/             # Management directory
+│   ├── config.toml     # v1.1.1 Unified config (mode, branches)
+│   └── docs/project/   # Internal project documentation (AI/Agent context)
 ├── assets/
 │   └── SKILL.md        # Skill definition template
 ├── scripts/            # Build and installation scripts

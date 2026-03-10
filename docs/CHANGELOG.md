@@ -1,11 +1,10 @@
 # CHANGELOG
-<!-- CURRENT_TASK: 20260310-105009 [topic:docs] -->
 
 ## [20260310-105009] Update project internal documentation to reflect v1.1.1 unified config and smart release logic
 - **开始时间**: 2026-03-10 10:50:09
-- **完成时间**: (进行中)
-- **类型**: (待定)
-- **描述**: (待补充)
+- **完成时间**: 2026-03-10 10:50:54
+- **类型**: docs
+- **描述**: Synchronize project internal documentation with v1.1.1 unified config and smart release logic
 
 ## [20260310-103438] Add taskflow coach subcommand
 - **开始时间**: 2026-03-10 10:34:38
