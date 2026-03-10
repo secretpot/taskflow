@@ -1,4 +1,4 @@
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use std::fs;
 use std::path::PathBuf;
 
@@ -56,14 +56,16 @@ pub fn get_management_root() -> Result<PathBuf> {
     // For a regular repo, it returns ".git" (relative), so parent is ".".
     // For an absolute path, parent is the repo root.
     if common_path.is_absolute() {
-        Ok(common_path.parent()
+        Ok(common_path
+            .parent()
             .ok_or_else(|| anyhow!("Cannot determine management root"))?
             .to_path_buf())
     } else {
         // Relative path (e.g., ".git") - resolve from current git toplevel
         let toplevel = get_git_root()?;
         let resolved = toplevel.join(&common_path);
-        Ok(resolved.parent()
+        Ok(resolved
+            .parent()
             .ok_or_else(|| anyhow!("Cannot determine management root"))?
             .to_path_buf())
     }
@@ -116,7 +118,7 @@ pub struct ReleaseBranches {
 /// Resolve exactly what branches to use for release based on config and smart fallback.
 pub fn resolve_release_branches() -> Result<ReleaseBranches> {
     let cfg = load_config()?;
-    
+
     let main_branch = if let Some(m) = cfg.main_branch {
         m
     } else if crate::git::branch_exists("main") {
@@ -126,7 +128,7 @@ pub fn resolve_release_branches() -> Result<ReleaseBranches> {
     } else {
         "main".to_string()
     };
-    
+
     let base_branch = if let Some(b) = cfg.base_branch {
         b
     } else if crate::git::branch_exists("dev") {

@@ -111,72 +111,46 @@ All commits follow this format:
 
 ## Prompt Coaching
 
-**Purpose**: Analyze the user's instruction quality throughout the conversation and generate actionable feedback to improve their context engineering skills. The goal is to reduce future conversation turns, cognitive load, and LLM token consumption.
+**Purpose**: Generate a coaching document tailored for the *human user* to help them improve their prompts in the future. The feedback should abstract away from the specific bug/feature and focus on *meta-level* advice on Context Engineering and Instruction formulation. The goal is to answer for the user: "Next time I assign a similar task, what should I provide upfront and how should I phrase my request so the agent can nail it in one try?"
 
-**Output Path**: `docs/prompt-coaching/<topic>-<task-id>.md` (or `docs/prompt-coaching/<task-id>.md` if no topic was provided)
+**Output Location Rules**: 
+A task ID looks like `YYYYMMDD-HHMMSS`. You must parse the task ID into date (`YYYYMMDD`) and time (`HHMMSS`).
+**Output Path**: `docs/prompt-coaching/<YYYYMMDD>/<HHMMSS>-<topic>.md` (or `docs/prompt-coaching/<YYYYMMDD>/<HHMMSS>.md` if no topic was provided). Example: `docs/prompt-coaching/20260310/093708-unify-config.md`.
 
-**CRITICAL**: The `close` command performs a **hard gate check** on this file. If the file does not exist, the close operation will fail. You MUST generate this document before running `close`.
+**CRITICAL**: The `close` command performs a **hard gate check** on this file. If the file does not exist at the exact expected path, the close operation will fail. You MUST generate this document and its parent directories before running `close`.
 
-### Analysis Dimensions
+### Analysis Focus
 
-Evaluate the user's prompts across these four dimensions:
-
-| Dimension | Description | Key Questions |
-|---|---|---|
-| Context Completeness | Whether sufficient background was provided | Was critical context missing? Were assumptions required? Was information disclosed progressively and logically? |
-| Instruction Clarity | Semantic precision of the task directives | Were instructions unambiguous? Was structured formatting used (lists, headings)? Were success criteria defined? |
-| Requirement Evolution | How requirements changed during the conversation | Were changes abrupt or well-motivated? Did communication gaps cause rework? |
-| Conversation Efficiency | Whether unnecessary clarification rounds occurred | Could any back-and-forth have been avoided with better upfront context? |
-
-### Grading Rubric
-
-Use discrete letter grades for each dimension:
-
-| Grade | Meaning |
-|---|---|
-| **A** | Excellent. No improvement needed. |
-| **B** | Good. Minor improvements possible. |
-| **C** | Adequate. Notable gaps that caused friction. |
-| **D** | Poor. Significant issues that led to wasted effort. |
+Evaluate the user's methodology across these areas:
+- **Context Completeness**: Are there hidden assumptions the human made? Did they point to the right initial files or architecture docs? Did the agent have to fish for context?
+- **Instruction Clarity**: Was the human's intention unambiguous? Did it prevent the agent from heading down the wrong technical path? 
+- **Course Correction**: When the agent got stuck, did the human provide effective unblocking hints, or did they provide vague directives?
 
 ### Output Template
 
-Use the following markdown structure:
+Use the following human-centric markdown structure:
 
 ```markdown
-# Prompt Coaching: [task-id]
+# Prompt Coaching: [topic or task-id]
 
-## Conversation Overview
-<!-- 1-2 sentence summary of what was accomplished -->
+## 1. What Happened
+<!-- 1-2 sentence objective summary of the task and where any friction occurred. -->
 
-## Evaluation
+## 2. Abstractions & Meta-Advice
+<!-- Abstract the frictions into general categories. E.g., instead of "You didn't give me user.rs", say "When refactoring database schemas, always provide the struct definition files." Provide high-level advice on how the human should reason about supplying context. -->
 
-| Dimension | Grade | Summary |
-|---|---|---|
-| Context Completeness | _ | ... |
-| Instruction Clarity | _ | ... |
-| Requirement Evolution | _ | ... |
-| Conversation Efficiency | _ | ... |
-
-## Detailed Analysis
-<!-- For each dimension graded B or below, provide:
-     1. What happened (specific example from conversation)
-     2. What could have been done differently
-     3. Suggested rewrite or approach -->
-
-## Actionable Takeaways
-<!-- Bulleted list of 2-5 concrete, specific improvements.
-     Each must be actionable (start with a verb). -->
+## 3. Actionable "Next Time" Checklist
+<!-- 2-4 concrete bullet points for the human. Start with strong verbs.
+  - e.g., "Provide the specific CLI command output when reporting a crash."
+  - e.g., "Explicitly define the accepted file paths when requesting refactoring."
+-->
 ```
 
 ### Rules
-
-1. **User-scope only**: Evaluate only what the user could have controlled. Do NOT critique the agent's own failures.
-2. **Be specific**: Every piece of feedback must reference a concrete moment in the conversation. Avoid generic advice.
-3. **Be constructive**: Frame all feedback as opportunities, not criticisms.
-4. **Proportional response**: If the conversation was short (1-2 turns) and instructions were clear, output a brief positive acknowledgment rather than forcing analysis.
-5. **No fluff**: Do not pad the document with boilerplate praise. Every sentence must carry information.
-6. **Language Alignment**: Check the `CHANGELOG.md` for the current task's language metadata (e.g., `[lang:zh]`).
+1. **Target the Human**: Address the user directly as a collaborator. Answer "How can *you* help *me* help *you* better?".
+2. **Be Constructive and Meta**: Do not just list "what I did". Generalize the experience into reusable prompt engineering rules.
+3. **Praise Good Practice**: If the human's initial prompt was perfect and the task was finished without friction, acknowledge what they did right so they can reproduce that success.
+4. **Language Alignment**: Check the `CHANGELOG.md` for the current task's language metadata (e.g., `[lang:zh]`).
     - If specified, generate the report in that language.
     - If not specified, detect and use the primary language used by the user in the current conversation.
     - Fallback to **English** if the language is unclear or not detected.

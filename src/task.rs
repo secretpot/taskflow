@@ -1,10 +1,10 @@
-use anyhow::{Result, anyhow, Context};
+use crate::config;
+use crate::git;
+use anyhow::{anyhow, Context, Result};
 use chrono::Local;
+use regex::Regex;
 use std::fs;
 use std::path::PathBuf;
-use regex::Regex;
-use crate::git;
-use crate::config;
 
 pub fn get_changelog_path() -> Result<PathBuf> {
     let mut path = std::env::current_dir()?;
@@ -21,17 +21,30 @@ pub fn init_parallel(branch: Option<&str>) -> Result<()> {
     // Verify .git is a directory (we are in the main worktree, not a linked one)
     let dot_git = root.join(".git");
     if !dot_git.is_dir() {
-        return Err(anyhow!("Must run 'init' from the main git repository root, not from a linked worktree."));
+        return Err(anyhow!(
+            "Must run 'init' from the main git repository root, not from a linked worktree."
+        ));
     }
 
     let config_path = root.join(".agent/config.toml");
     if config_path.exists() {
-        return Err(anyhow!("Already initialized. Config exists at {:?}", config_path));
+        return Err(anyhow!(
+            "Already initialized. Config exists at {:?}",
+            config_path
+        ));
     }
 
     // Reject if there are uncommitted changes to prevent dataloss
-    if git::has_staged_changes()? || !std::process::Command::new("git").arg("diff").arg("--quiet").status()?.success() {
-        return Err(anyhow!("You have uncommitted changes. Please commit or stash them before running 'init'."));
+    if git::has_staged_changes()?
+        || !std::process::Command::new("git")
+            .arg("diff")
+            .arg("--quiet")
+            .status()?
+            .success()
+    {
+        return Err(anyhow!(
+            "You have uncommitted changes. Please commit or stash them before running 'init'."
+        ));
     }
 
     // Resolve base branch
@@ -42,7 +55,10 @@ pub fn init_parallel(branch: Option<&str>) -> Result<()> {
         }
         None => {
             let detected = git::get_current_branch()?;
-            println!("Detected base branch: {}. Using it as the base branch.", detected);
+            println!(
+                "Detected base branch: {}. Using it as the base branch.",
+                detected
+            );
             detected
         }
     };
@@ -72,10 +88,7 @@ pub fn init_parallel(branch: Option<&str>) -> Result<()> {
     let agent_dir = root.join(".agent");
     fs::create_dir_all(&agent_dir)?;
 
-    let config_content = format!(
-        "mode = \"parallel\"\nbase_branch = \"{}\"\n",
-        base_branch
-    );
+    let config_content = format!("mode = \"parallel\"\nbase_branch = \"{}\"\n", base_branch);
     fs::write(&config_path, config_content)?;
     println!("Created config: {:?}", config_path);
 
@@ -92,10 +105,7 @@ pub fn init_parallel(branch: Option<&str>) -> Result<()> {
         String::new()
     };
 
-    let entries_to_add = vec![
-        format!("/{}/", base_branch),
-        "/tasks/".to_string(),
-    ];
+    let entries_to_add = vec![format!("/{}/", base_branch), "/tasks/".to_string()];
 
     let mut modified = false;
     for entry in &entries_to_add {
@@ -128,7 +138,10 @@ pub fn init_parallel(branch: Option<&str>) -> Result<()> {
 
     // Output guidance for manual cleanup of untracked files
     println!("\nℹ️  Note: Untracked files (e.g., target/, node_modules/, .env) were left in the root directory.");
-    println!("If you want to preserve build caches, move them into {}/ after setup.", base_branch);
+    println!(
+        "If you want to preserve build caches, move them into {}/ after setup.",
+        base_branch
+    );
 
     // Create base branch worktree
     let base_worktree_path = root.join(&base_branch);
@@ -136,7 +149,10 @@ pub fn init_parallel(branch: Option<&str>) -> Result<()> {
         println!("🌿 Creating worktree for base branch '{}'...", base_branch);
         git::worktree_add_existing(&base_worktree_path, &base_branch)?;
     } else {
-        println!("Base branch worktree already exists at {:?}", base_worktree_path);
+        println!(
+            "Base branch worktree already exists at {:?}",
+            base_worktree_path
+        );
     }
 
     println!("\n--- Parallel mode initialized ---");
@@ -144,7 +160,10 @@ pub fn init_parallel(branch: Option<&str>) -> Result<()> {
     println!("Base branch:     {}", base_branch);
     println!("Dev worktree:    {:?}", base_worktree_path);
     println!("Tasks directory: {:?}", tasks_dir);
-    println!("\nPlease open {:?} as your IDE workspace root to see all worktrees.", root);
+    println!(
+        "\nPlease open {:?} as your IDE workspace root to see all worktrees.",
+        root
+    );
 
     Ok(())
 }
@@ -162,12 +181,15 @@ pub fn open_task(description: &str, topic: Option<&str>, lang: Option<&str>) -> 
 fn open_task_classic(description: &str, topic: Option<&str>, lang: Option<&str>) -> Result<()> {
     let current_branch = git::get_current_branch()?;
     if current_branch.starts_with("task/") {
-        return Err(anyhow!("You are already on a task branch ({})! Please close it before opening a new one.", current_branch));
+        return Err(anyhow!(
+            "You are already on a task branch ({})! Please close it before opening a new one.",
+            current_branch
+        ));
     }
 
     let changelog_path = get_changelog_path()?;
     let docs_dir = changelog_path.parent().unwrap();
-    
+
     if !docs_dir.exists() {
         fs::create_dir_all(docs_dir)?;
     }
@@ -178,7 +200,9 @@ fn open_task_classic(description: &str, topic: Option<&str>, lang: Option<&str>)
 
     let content = fs::read_to_string(&changelog_path)?;
     if content.contains("<!-- CURRENT_TASK:") {
-        return Err(anyhow!("A task is already OPEN (in CHANGELOG)! Please close it before opening a new one."));
+        return Err(anyhow!(
+            "A task is already OPEN (in CHANGELOG)! Please close it before opening a new one."
+        ));
     }
 
     // Git operations: Checkout dev and pull (Skip if repo is empty)
@@ -186,11 +210,20 @@ fn open_task_classic(description: &str, topic: Option<&str>, lang: Option<&str>)
     let base_branch = branches.base_branch;
 
     if git::is_empty_repo()? {
-        println!("ℹ️  Empty repository detected. Skipping {} sync.", base_branch);
+        println!(
+            "ℹ️  Empty repository detected. Skipping {} sync.",
+            base_branch
+        );
     } else {
-        println!("🚀 Switching to {} and pulling latest changes...", base_branch);
+        println!(
+            "🚀 Switching to {} and pulling latest changes...",
+            base_branch
+        );
         if let Err(e) = git::checkout(&base_branch) {
-            println!("ℹ️  '{}' branch not found. Staying on current branch. ({})", base_branch, e);
+            println!(
+                "ℹ️  '{}' branch not found. Staying on current branch. ({})",
+                base_branch, e
+            );
         } else {
             let _ = git::pull("origin", &base_branch);
         }
@@ -249,7 +282,10 @@ fn open_task_parallel(description: &str, topic: Option<&str>, lang: Option<&str>
     let current_time = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
 
     let (branch_name, worktree_dir_name) = if let Some(t) = topic {
-        (format!("task/{}-{}", t, task_id), format!("{}-{}", t, task_id))
+        (
+            format!("task/{}-{}", t, task_id),
+            format!("{}-{}", t, task_id),
+        )
     } else {
         (format!("task/{}", task_id), task_id.clone())
     };
@@ -273,7 +309,10 @@ fn open_task_parallel(description: &str, topic: Option<&str>, lang: Option<&str>
     let actual_start = if check_remote.status.success() {
         start_point
     } else {
-        println!("ℹ️  Remote tracking branch not found. Using local '{}'.", base_branch);
+        println!(
+            "ℹ️  Remote tracking branch not found. Using local '{}'.",
+            base_branch
+        );
         base_branch.clone()
     };
 
@@ -302,7 +341,11 @@ fn open_task_parallel(description: &str, topic: Option<&str>, lang: Option<&str>
     );
 
     let body = if existing_content.starts_with("# CHANGELOG") {
-        existing_content.lines().skip(1).collect::<Vec<_>>().join("\n")
+        existing_content
+            .lines()
+            .skip(1)
+            .collect::<Vec<_>>()
+            .join("\n")
     } else {
         existing_content
     };
@@ -336,8 +379,12 @@ pub fn close_task(
 ) -> Result<()> {
     let mode = config::detect_mode()?;
     match mode {
-        config::TaskflowMode::Classic => close_task_classic(commit_type, scope, subject, body, footer, auto_stage),
-        config::TaskflowMode::Parallel => close_task_parallel(commit_type, scope, subject, body, footer, auto_stage),
+        config::TaskflowMode::Classic => {
+            close_task_classic(commit_type, scope, subject, body, footer, auto_stage)
+        }
+        config::TaskflowMode::Parallel => {
+            close_task_parallel(commit_type, scope, subject, body, footer, auto_stage)
+        }
     }
 }
 
@@ -351,7 +398,10 @@ fn close_task_classic(
 ) -> Result<()> {
     let current_branch = git::get_current_branch()?;
     if !current_branch.starts_with("task/") {
-        return Err(anyhow!("You are not on a task branch ({})! Use 'git checkout' to switch to your task branch.", current_branch));
+        return Err(anyhow!(
+            "You are not on a task branch ({})! Use 'git checkout' to switch to your task branch.",
+            current_branch
+        ));
     }
 
     let changelog_path = get_changelog_path()?;
@@ -359,31 +409,48 @@ fn close_task_classic(
         .context("CHANGELOG.md not found. Have you opened a task?")?;
 
     let re_marker = Regex::new(r"<!-- CURRENT_TASK: (.*) -->")?;
-    let marker_content = re_marker.captures(&content)
+    let marker_content = re_marker
+        .captures(&content)
         .ok_or_else(|| anyhow!("No active task found in CHANGELOG.md"))?
-        .get(1).unwrap().as_str().to_string();
+        .get(1)
+        .unwrap()
+        .as_str()
+        .to_string();
 
     // Parse task_id and optional metadata
     let re_id = Regex::new(r"^([^\s]+)")?;
-    let task_id = re_id.captures(&marker_content)
+    let task_id = re_id
+        .captures(&marker_content)
         .ok_or_else(|| anyhow!("Invalid task marker format"))?
-        .get(1).unwrap().as_str().to_string();
+        .get(1)
+        .unwrap()
+        .as_str()
+        .to_string();
 
     let re_topic = Regex::new(r"\[topic:([^\]]+)\]")?;
-    let topic = re_topic.captures(&marker_content)
+    let topic = re_topic
+        .captures(&marker_content)
         .map(|c| c.get(1).unwrap().as_str());
 
     // Hard Gate: Verify prompt coaching document exists
-    let coaching_filename = if let Some(t) = topic {
-        format!("{}-{}.md", t, task_id)
+    let parts: Vec<&str> = task_id.split('-').collect();
+    let (date_folder, time_prefix) = if parts.len() >= 2 {
+        (parts[0], parts[1])
     } else {
-        format!("{}.md", task_id)
+        ("unknown_date", task_id.as_str())
+    };
+
+    let coaching_filename = if let Some(t) = topic {
+        format!("{}-{}.md", time_prefix, t)
+    } else {
+        format!("{}.md", time_prefix)
     };
 
     let coaching_file = {
         let mut p = std::env::current_dir()?;
         p.push("docs");
         p.push("prompt-coaching");
+        p.push(date_folder);
         p.push(&coaching_filename);
         p
     };
@@ -391,8 +458,10 @@ fn close_task_classic(
         return Err(anyhow!(
             "Prompt coaching document not found: {:?}\n\
              You MUST generate a prompt coaching report before closing the task.\n\
-             Expected path: docs/prompt-coaching/{}",
-            coaching_file, coaching_filename
+             Expected path: docs/prompt-coaching/{}/{}",
+            coaching_file,
+            date_folder,
+            coaching_filename
         ));
     }
 
@@ -411,7 +480,7 @@ fn close_task_classic(
     // Update CHANGELOG content
     let mut updated_lines = Vec::new();
     let mut in_task = false;
-    
+
     for line in content.lines() {
         if line.starts_with(&format!("## [{}]", task_id)) {
             in_task = true;
@@ -446,8 +515,14 @@ fn close_task_classic(
     let scope_filtered = scope.filter(|s| !s.is_empty());
     let footer_filtered = footer.filter(|s| !s.is_empty());
 
-    let scope_str = scope_filtered.as_ref().map(|s| format!("({})", s)).unwrap_or_default();
-    let mut commit_msg = format!("{}{}: [{}] {}\n\n{}", commit_type, scope_str, task_id, subject, body);
+    let scope_str = scope_filtered
+        .as_ref()
+        .map(|s| format!("({})", s))
+        .unwrap_or_default();
+    let mut commit_msg = format!(
+        "{}{}: [{}] {}\n\n{}",
+        commit_type, scope_str, task_id, subject, body
+    );
     if let Some(f) = footer_filtered {
         commit_msg.push_str("\n\n");
         commit_msg.push_str(&f);
@@ -471,11 +546,14 @@ fn close_task_classic(
 
     println!("🚀 Merging task branch into {}...", base_branch);
     if let Err(e) = git::checkout(&base_branch) {
-        println!("ℹ️  '{}' branch not found. Creating it... ({})", base_branch, e);
+        println!(
+            "ℹ️  '{}' branch not found. Creating it... ({})",
+            base_branch, e
+        );
         git::create_branch(&base_branch)?;
     }
     git::merge(&current_branch)?;
-    
+
     println!("🧹 Deleting task branch {}...", current_branch);
     git::delete_branch(&current_branch)?;
 
@@ -519,34 +597,51 @@ fn close_task_parallel(
         p.push("CHANGELOG.md");
         p
     };
-    let content = fs::read_to_string(&changelog_path)
-        .context("CHANGELOG.md not found in this worktree.")?;
+    let content =
+        fs::read_to_string(&changelog_path).context("CHANGELOG.md not found in this worktree.")?;
 
     let re_marker = Regex::new(r"<!-- CURRENT_TASK: (.*) -->")?;
-    let marker_content = re_marker.captures(&content)
+    let marker_content = re_marker
+        .captures(&content)
         .ok_or_else(|| anyhow!("No active task found in CHANGELOG.md"))?
-        .get(1).unwrap().as_str().to_string();
+        .get(1)
+        .unwrap()
+        .as_str()
+        .to_string();
 
     let re_id = Regex::new(r"^([^\s]+)")?;
-    let task_id = re_id.captures(&marker_content)
+    let task_id = re_id
+        .captures(&marker_content)
         .ok_or_else(|| anyhow!("Invalid task marker format"))?
-        .get(1).unwrap().as_str().to_string();
+        .get(1)
+        .unwrap()
+        .as_str()
+        .to_string();
 
     let re_topic = Regex::new(r"\[topic:([^\]]+)\]")?;
-    let topic = re_topic.captures(&marker_content)
+    let topic = re_topic
+        .captures(&marker_content)
         .map(|c| c.get(1).unwrap().as_str());
 
     // Hard Gate: prompt coaching check
-    let coaching_filename = if let Some(t) = topic {
-        format!("{}-{}.md", t, task_id)
+    let parts: Vec<&str> = task_id.split('-').collect();
+    let (date_folder, time_prefix) = if parts.len() >= 2 {
+        (parts[0], parts[1])
     } else {
-        format!("{}.md", task_id)
+        ("unknown_date", task_id.as_str())
+    };
+
+    let coaching_filename = if let Some(t) = topic {
+        format!("{}-{}.md", time_prefix, t)
+    } else {
+        format!("{}.md", time_prefix)
     };
 
     let coaching_file = {
         let mut p = worktree_root.clone();
         p.push("docs");
         p.push("prompt-coaching");
+        p.push(date_folder);
         p.push(&coaching_filename);
         p
     };
@@ -554,16 +649,21 @@ fn close_task_parallel(
         return Err(anyhow!(
             "Prompt coaching document not found: {:?}\n\
              You MUST generate a prompt coaching report before closing the task.\n\
-             Expected path: docs/prompt-coaching/{}",
-            coaching_file, coaching_filename
+             Expected path: docs/prompt-coaching/{}/{}",
+            coaching_file,
+            date_folder,
+            coaching_filename
         ));
     }
 
     let current_time = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
 
     let type_scope = if let Some(s) = scope.as_ref() {
-        if s.is_empty() { commit_type.to_string() }
-        else { format!("{}({})", commit_type, s) }
+        if s.is_empty() {
+            commit_type.to_string()
+        } else {
+            format!("{}({})", commit_type, s)
+        }
     } else {
         commit_type.to_string()
     };
@@ -606,8 +706,14 @@ fn close_task_parallel(
     let scope_filtered = scope.filter(|s| !s.is_empty());
     let footer_filtered = footer.filter(|s| !s.is_empty());
 
-    let scope_str = scope_filtered.as_ref().map(|s| format!("({})", s)).unwrap_or_default();
-    let mut commit_msg = format!("{}{}: [{}] {}\n\n{}", commit_type, scope_str, task_id, subject, body);
+    let scope_str = scope_filtered
+        .as_ref()
+        .map(|s| format!("({})", s))
+        .unwrap_or_default();
+    let mut commit_msg = format!(
+        "{}{}: [{}] {}\n\n{}",
+        commit_type, scope_str, task_id, subject, body
+    );
     if let Some(f) = footer_filtered {
         commit_msg.push_str("\n\n");
         commit_msg.push_str(&f);
@@ -657,7 +763,10 @@ pub fn release_task(version: &str) -> Result<()> {
     // 1. Ensure we are on dev and clean
     git::checkout(dev_branch)?;
     if git::has_staged_changes()? {
-        return Err(anyhow!("You have staged changes on {}. Please commit or stash them before releasing.", dev_branch));
+        return Err(anyhow!(
+            "You have staged changes on {}. Please commit or stash them before releasing.",
+            dev_branch
+        ));
     }
 
     // 2. Update Cargo.toml version
@@ -699,7 +808,7 @@ pub fn release_task(version: &str) -> Result<()> {
         .arg("-m")
         .arg(format!("Release {}", tag_name))
         .status()?;
-    
+
     if !status.success() {
         return Err(anyhow!("Failed to create git tag {}", tag_name));
     }
@@ -729,34 +838,37 @@ pub fn status() -> Result<()> {
 
 fn status_classic() -> Result<()> {
     let changelog_path = get_changelog_path()?;
-    let content = fs::read_to_string(&changelog_path)
-        .context("CHANGELOG.md not found.")?;
+    let content = fs::read_to_string(&changelog_path).context("CHANGELOG.md not found.")?;
 
     let re_marker = Regex::new(r"<!-- CURRENT_TASK: (.*) -->")?;
     let captures = re_marker.captures(&content);
-    
+
     if captures.is_none() {
         println!("No active task found.");
         return Ok(());
     }
-    
+
     let marker_content = captures.unwrap().get(1).unwrap().as_str();
-    
+
     let re_id = Regex::new(r"^([^\s]+)")?;
-    let id_caps = re_id.captures(marker_content)
+    let id_caps = re_id
+        .captures(marker_content)
         .ok_or_else(|| anyhow!("Invalid task marker format"))?;
     let task_id = id_caps.get(1).unwrap().as_str();
 
     let re_lang = Regex::new(r"\[lang:([^\]]+)\]")?;
-    let language = re_lang.captures(marker_content)
+    let language = re_lang
+        .captures(marker_content)
         .map(|c| c.get(1).unwrap().as_str());
 
     let re_topic = Regex::new(r"\[topic:([^\]]+)\]")?;
-    let topic = re_topic.captures(marker_content)
+    let topic = re_topic
+        .captures(marker_content)
         .map(|c| c.get(1).unwrap().as_str());
 
     let re_desc = Regex::new(&format!(r"## \[{}\] (.*)", regex::escape(task_id)))?;
-    let description = re_desc.captures(&content)
+    let description = re_desc
+        .captures(&content)
         .map(|c| c.get(1).unwrap().as_str())
         .unwrap_or("Unknown");
 
@@ -787,7 +899,8 @@ fn status_parallel() -> Result<()> {
     let worktrees = git::worktree_list()?;
     let tasks_dir_str = tasks_dir.to_string_lossy().to_string();
 
-    let task_worktrees: Vec<&(String, String)> = worktrees.iter()
+    let task_worktrees: Vec<&(String, String)> = worktrees
+        .iter()
         .filter(|(path, _)| path.starts_with(&tasks_dir_str))
         .collect();
 
@@ -804,9 +917,10 @@ fn status_parallel() -> Result<()> {
                     let task_id = re_marker
                         .and_then(|re| re.captures(&content))
                         .map(|c| c.get(1).unwrap().as_str().to_string());
-                    
+
                     if let Some(id) = &task_id {
-                        let re_desc = Regex::new(&format!(r"## \[{}\] (.*)", regex::escape(id))).ok();
+                        let re_desc =
+                            Regex::new(&format!(r"## \[{}\] (.*)", regex::escape(id))).ok();
                         re_desc
                             .and_then(|re| re.captures(&content))
                             .map(|c| c.get(1).unwrap().as_str().to_string())

@@ -1,15 +1,17 @@
-use clap::{Parser, Subcommand};
 use anyhow::Result;
+use clap::{Parser, Subcommand};
 
-mod task;
-mod git;
 mod config;
+mod git;
+mod task;
 
 #[derive(Parser)]
 #[command(name = "taskflow")]
 #[command(version)]
-#[command(about = "Manage task lifecycle (管理任务生命周期)", 
-    long_about = "A CLI tool for agents to manage task branches, changelogs, and git commits. (用于 Agent 自动化管理任务分支、变更日志及 Git 提交的命令行工具。)")]
+#[command(
+    about = "Manage task lifecycle (管理任务生命周期)",
+    long_about = "A CLI tool for agents to manage task branches, changelogs, and git commits. (用于 Agent 自动化管理任务分支、变更日志及 Git 提交的命令行工具。)"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -63,11 +65,29 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Open { description, topic, lang } => {
+        Commands::Open {
+            description,
+            topic,
+            lang,
+        } => {
             task::open_task(&description, topic.as_deref(), lang.as_deref())?;
         }
-        Commands::Close { r#type, scope, subject, body, footer, auto_stage } => {
-            task::close_task(&r#type, Some(scope), &subject, &body, Some(footer), auto_stage)?;
+        Commands::Close {
+            r#type,
+            scope,
+            subject,
+            body,
+            footer,
+            auto_stage,
+        } => {
+            task::close_task(
+                &r#type,
+                Some(scope),
+                &subject,
+                &body,
+                Some(footer),
+                auto_stage,
+            )?;
         }
         Commands::Release { version } => {
             task::release_task(&version)?;

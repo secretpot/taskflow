@@ -9,7 +9,7 @@
 - **Global Installation**: Provides `install.sh` (Unix) and `install.bat` (Windows) to install `taskflow` as a native CLI command.
 - **Bilingual CLI Help**: Full English and Chinese support in `--help` output for improved readability by both humans and agents.
 - **Remote Synchronization**: `close` and `release` commands automatically push changes to remote repositories.
-- **Prompt Coaching**: `close` command enforces generation of a prompt coaching report (`docs/prompt-coaching/<topic>-<task-id>.md`) that analyzes the user's instruction quality, helping users improve their context engineering skills over time.
+- **Prompt Coaching**: `close` command enforces generation of a prompt coaching report (`docs/prompt-coaching/<YYYYMMDD>/<HHMMSS>-<topic>.md`) tailored for human users, helping them improve their prompt and context engineering skills globally.
 - **GitHub-Integrated Releases**: Automated CI/CD (GitHub Actions) for cross-platform binary distribution on Tag creation.
 - **Structured Git Commits**: Enforces Conventional Commits with Task IDs integrated into the message.
 - **Streamlined Distribution**: 

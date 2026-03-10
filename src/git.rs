@@ -1,21 +1,15 @@
+use anyhow::{anyhow, Result};
 use std::process::Command;
-use anyhow::{Result, anyhow};
 
 pub fn is_empty_repo() -> Result<bool> {
-    let output = Command::new("git")
-        .arg("rev-parse")
-        .arg("HEAD")
-        .output()?;
-    
+    let output = Command::new("git").arg("rev-parse").arg("HEAD").output()?;
+
     Ok(!output.status.success())
 }
 
 pub fn git_add_all() -> Result<()> {
-    let status = Command::new("git")
-        .arg("add")
-        .arg(".")
-        .status()?;
-    
+    let status = Command::new("git").arg("add").arg(".").status()?;
+
     if !status.success() {
         return Err(anyhow!("git add . failed"));
     }
@@ -28,7 +22,7 @@ pub fn git_commit(message: &str) -> Result<()> {
         .arg("-m")
         .arg(message)
         .status()?;
-    
+
     if !status.success() {
         return Err(anyhow!("git commit failed"));
     }
@@ -41,7 +35,7 @@ pub fn has_staged_changes() -> Result<bool> {
         .arg("--cached")
         .arg("--quiet")
         .status()?;
-    
+
     Ok(!output.success())
 }
 
@@ -51,7 +45,7 @@ pub fn get_current_branch() -> Result<String> {
         .arg("--abbrev-ref")
         .arg("HEAD")
         .output()?;
-    
+
     if !output.status.success() {
         // Handle empty repository by trying to get the default branch name
         let default_branch = Command::new("git")
@@ -59,28 +53,25 @@ pub fn get_current_branch() -> Result<String> {
             .arg("--get")
             .arg("init.defaultBranch")
             .output()?;
-        
+
         let branch = if default_branch.status.success() {
             String::from_utf8(default_branch.stdout)?.trim().to_string()
         } else {
             "main".to_string()
         };
-        
+
         if branch.is_empty() {
             return Ok("main".to_string());
         }
         return Ok(branch);
     }
-    
+
     Ok(String::from_utf8(output.stdout)?.trim().to_string())
 }
 
 pub fn checkout(branch: &str) -> Result<()> {
-    let status = Command::new("git")
-        .arg("checkout")
-        .arg(branch)
-        .status()?;
-    
+    let status = Command::new("git").arg("checkout").arg(branch).status()?;
+
     if !status.success() {
         return Err(anyhow!("git checkout {} failed", branch));
     }
@@ -93,7 +84,7 @@ pub fn create_branch(branch: &str) -> Result<()> {
         .arg("-b")
         .arg(branch)
         .status()?;
-    
+
     if !status.success() {
         return Err(anyhow!("git checkout -b {} failed", branch));
     }
@@ -106,20 +97,20 @@ pub fn pull(remote: &str, branch: &str) -> Result<()> {
         .arg(remote)
         .arg(branch)
         .status()?;
-    
+
     if !status.success() {
         // Ignored if remote doesn't exist or pull fails due to no remote track
-        println!("Warning: git pull {}:{} failed. Continuing...", remote, branch);
+        println!(
+            "Warning: git pull {}:{} failed. Continuing...",
+            remote, branch
+        );
     }
     Ok(())
 }
 
 pub fn merge(branch: &str) -> Result<()> {
-    let status = Command::new("git")
-        .arg("merge")
-        .arg(branch)
-        .status()?;
-    
+    let status = Command::new("git").arg("merge").arg(branch).status()?;
+
     if !status.success() {
         return Err(anyhow!("git merge {} failed", branch));
     }
@@ -132,7 +123,7 @@ pub fn delete_branch(branch: &str) -> Result<()> {
         .arg("-d")
         .arg(branch)
         .status()?;
-    
+
     if !status.success() {
         println!("Warning: Failed to delete local branch {}", branch);
     }
@@ -146,7 +137,7 @@ pub fn push(remote: &str, branch: &str, include_tags: bool) -> Result<()> {
         .arg("get-url")
         .arg(remote)
         .output()?;
-    
+
     if !remote_check.status.success() {
         println!("ℹ️  Remote '{}' not found. Skipping push.", remote);
         return Ok(());
@@ -154,15 +145,18 @@ pub fn push(remote: &str, branch: &str, include_tags: bool) -> Result<()> {
 
     let mut cmd = Command::new("git");
     cmd.arg("push").arg(remote).arg(branch);
-    
+
     if include_tags {
         cmd.arg("--tags");
     }
 
     let status = cmd.status()?;
-    
+
     if !status.success() {
-        println!("Warning: git push {} {} failed. Your internet connection might be down.", remote, branch);
+        println!(
+            "Warning: git push {} {} failed. Your internet connection might be down.",
+            remote, branch
+        );
     }
     Ok(())
 }
@@ -187,10 +181,7 @@ pub fn detach_head() -> Result<()> {
 
 /// Run a git command in a specific working directory.
 fn run_git_in(dir: &std::path::Path, args: &[&str]) -> Result<()> {
-    let status = Command::new("git")
-        .current_dir(dir)
-        .args(args)
-        .status()?;
+    let status = Command::new("git").current_dir(dir).args(args).status()?;
 
     if !status.success() {
         return Err(anyhow!("git {} failed in {:?}", args.join(" "), dir));
@@ -212,7 +203,9 @@ pub fn worktree_add(path: &std::path::Path, branch: &str, start_point: &str) -> 
     if !status.success() {
         return Err(anyhow!(
             "git worktree add -b {} {:?} {} failed",
-            branch, path, start_point
+            branch,
+            path,
+            start_point
         ));
     }
     Ok(())
@@ -230,10 +223,7 @@ pub fn worktree_add_existing(path: &std::path::Path, branch: &str) -> Result<()>
         .status()?;
 
     if !status.success() {
-        return Err(anyhow!(
-            "git worktree add {:?} {} failed",
-            path, branch
-        ));
+        return Err(anyhow!("git worktree add {:?} {} failed", path, branch));
     }
     Ok(())
 }
@@ -313,7 +303,10 @@ pub fn fetch(remote: &str, branch: &str) -> Result<()> {
         .status()?;
 
     if !status.success() {
-        println!("Warning: git fetch {} {} failed. Continuing...", remote, branch);
+        println!(
+            "Warning: git fetch {} {} failed. Continuing...",
+            remote, branch
+        );
     }
     Ok(())
 }
@@ -344,9 +337,12 @@ pub fn delete_branch_in(dir: &std::path::Path, branch: &str) -> Result<()> {
         .arg("-D")
         .arg(branch)
         .status()?;
-    
+
     if !status.success() {
-        println!("Warning: git branch -D {} failed in {:?}. Continuing...", branch, dir);
+        println!(
+            "Warning: git branch -D {} failed in {:?}. Continuing...",
+            branch, dir
+        );
     }
     Ok(())
 }
@@ -359,9 +355,12 @@ pub fn push_in(dir: &std::path::Path, remote: &str, branch: &str, tags: bool) ->
         cmd.arg("--tags");
     }
     let status = cmd.status()?;
-    
+
     if !status.success() {
-        println!("Warning: git push {} {} failed in {:?}. Continuing...", remote, branch, dir);
+        println!(
+            "Warning: git push {} {} failed in {:?}. Continuing...",
+            remote, branch, dir
+        );
     }
     Ok(())
 }
@@ -374,16 +373,20 @@ pub fn branch_exists(branch: &str) -> bool {
         .arg(&format!("refs/heads/{}", branch))
         .status();
     if let Ok(st) = status {
-        if st.success() { return true; }
+        if st.success() {
+            return true;
+        }
     }
-    
+
     let status = Command::new("git")
         .arg("show-ref")
         .arg("--verify")
         .arg(&format!("refs/remotes/origin/{}", branch))
         .status();
     if let Ok(st) = status {
-        if st.success() { return true; }
+        if st.success() {
+            return true;
+        }
     }
     false
 }
