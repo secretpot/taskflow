@@ -1,4 +1,11 @@
 # CHANGELOG
+<!-- CURRENT_TASK: 20260310-101147 -->
+
+## [20260310-101147] Optimize prompt-coaching taskflow feature
+- **开始时间**: 2026-03-10 10:11:47
+- **完成时间**: (进行中)
+- **类型**: (待定)
+- **描述**: (待补充)
 
 ## [20260310-093708] Refactor configuration to unify modes and implement smart branch resolution, fixing hardcoded branch names and Cargo.lock sync in release
 - **开始时间**: 2026-03-10 09:37:08
