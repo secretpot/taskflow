@@ -61,7 +61,24 @@ taskflow close "<type>" "<scope>" "<subject>" "<body>" "[footer]"
 taskflow release <version>
 ```
 
-### 4. Get Current Task Status
+### 4. Write Prompt Coaching Report
+**Intent**: Generate the mandatory feedback document analyzing the user's instructions.
+**Project Impact**: Automatically detects the current task and creates the report at the correct date-organized path `docs/prompt-coaching/<YYYYMMDD>/<HHMMSS>-<topic>.md`.
+
+**CRITICAL**: You MUST run this before executing `taskflow close`.
+
+```bash
+# Option A: Pipe content via stdin (Recommended for long markdown)
+cat << 'EOF' | taskflow coach
+# Prompt Coaching...
+...
+EOF
+
+# Option B: Pass content directly
+taskflow coach --content "# Prompt Coaching..."
+```
+
+### 5. Get Current Task Status
 **Intent**: Verify the active developmental context.
 **Project Impact**: In Classic mode, returns the current Task ID and branch. In Parallel mode, lists all active task worktrees.
 
@@ -69,7 +86,7 @@ taskflow release <version>
 taskflow status
 ```
 
-### 5. Initialize Parallel Mode
+### 6. Initialize Parallel Mode
 **Intent**: Convert a repository into a management root for multi-agent parallel development.
 **Project Impact**: Creates `.agent/config.toml`, a base branch worktree, and a `tasks/` directory. One-time setup.
 
@@ -114,10 +131,10 @@ All commits follow this format:
 **Purpose**: Generate a coaching document tailored for the *human user* to help them improve their prompts in the future. The feedback should abstract away from the specific bug/feature and focus on *meta-level* advice on Context Engineering and Instruction formulation. The goal is to answer for the user: "Next time I assign a similar task, what should I provide upfront and how should I phrase my request so the agent can nail it in one try?"
 
 **Output Location Rules**: 
-A task ID looks like `YYYYMMDD-HHMMSS`. You must parse the task ID into date (`YYYYMMDD`) and time (`HHMMSS`).
-**Output Path**: `docs/prompt-coaching/<YYYYMMDD>/<HHMMSS>-<topic>.md` (or `docs/prompt-coaching/<YYYYMMDD>/<HHMMSS>.md` if no topic was provided). Example: `docs/prompt-coaching/20260310/093708-unify-config.md`.
+A task ID looks like `YYYYMMDD-HHMMSS`. The generated file path will be `docs/prompt-coaching/<YYYYMMDD>/<HHMMSS>-<topic>.md` (or `docs/prompt-coaching/<YYYYMMDD>/<HHMMSS>.md` if no topic was provided). 
 
-**CRITICAL**: The `close` command performs a **hard gate check** on this file. If the file does not exist at the exact expected path, the close operation will fail. You MUST generate this document and its parent directories before running `close`.
+**CRITICAL**: The `taskflow close` command performs a **hard gate check** on this file. If the file does not exist, the close operation will fail. 
+You MUST use the `taskflow coach` subcommand (via pipe or `--content`) to generate this document before running `close`. Do NOT attempt to calculate the path or create the file manually using system tools. The `taskflow coach` command will handle all routing and directory creation.
 
 ### Analysis Focus
 

@@ -51,6 +51,12 @@ enum Commands {
         /// New version string (e.g. 0.1.0) (新版本号字符串，如 0.1.0)
         version: String,
     },
+    /// Write a prompt coaching report for the current task (为当前任务写入提示词辅导报告)
+    Coach {
+        /// Content of the prompt coaching report. If empty, reads from stdin. (提示词辅导内容，如果为空则从标准输入流读取)
+        #[arg(long, short)]
+        content: Option<String>,
+    },
     /// Get current task status (获取当前任务状态)
     Status,
     /// Initialize parallel task management (初始化并行任务管理)
@@ -91,6 +97,9 @@ fn main() -> Result<()> {
         }
         Commands::Release { version } => {
             task::release_task(&version)?;
+        }
+        Commands::Coach { content } => {
+            task::create_coaching_report(content)?;
         }
         Commands::Status => {
             task::status()?;

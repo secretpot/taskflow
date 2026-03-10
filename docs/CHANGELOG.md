@@ -1,11 +1,10 @@
 # CHANGELOG
-<!-- CURRENT_TASK: 20260310-103438 [topic:coaching-cmd] -->
 
 ## [20260310-103438] Add taskflow coach subcommand
 - **开始时间**: 2026-03-10 10:34:38
-- **完成时间**: (进行中)
-- **类型**: (待定)
-- **描述**: (待补充)
+- **完成时间**: 2026-03-10 10:38:02
+- **类型**: feat(coach-cmd)
+- **描述**: Add taskflow coach subcommand
 
 ## [20260310-102718] Refine Prompt Coaching layout and rules
 - **开始时间**: 2026-03-10 10:27:18

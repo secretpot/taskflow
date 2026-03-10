@@ -4,6 +4,7 @@ use anyhow::{anyhow, Context, Result};
 use chrono::Local;
 use regex::Regex;
 use std::fs;
+use std::io::{self, Read};
 use std::path::PathBuf;
 
 pub fn get_changelog_path() -> Result<PathBuf> {
@@ -363,6 +364,98 @@ fn open_task_parallel(description: &str, topic: Option<&str>, lang: Option<&str>
     println!("Description: {}", description);
     println!("WORKTREE_PATH: {}", worktree_path.display());
     println!("\nPlease switch your working directory to the worktree path above.");
+
+    Ok(())
+}
+
+// --- Coach ---
+
+pub fn create_coaching_report(content: Option<String>) -> Result<()> {
+    // 1. Determine root and changelog
+    let mode = config::detect_mode()?;
+    let worktree_root = match mode {
+        config::TaskflowMode::Classic => config::get_git_root()?,
+        config::TaskflowMode::Parallel => config::get_git_root()?,
+    };
+
+    let changelog_path = {
+        let mut p = worktree_root.clone();
+        p.push("docs");
+        p.push("CHANGELOG.md");
+        p
+    };
+
+    let changelog_content = fs::read_to_string(&changelog_path)
+        .context("CHANGELOG.md not found. Are you in an active task?")?;
+
+    let re_marker = Regex::new(r"<!-- CURRENT_TASK: (.*) -->")?;
+    let marker_content = re_marker
+        .captures(&changelog_content)
+        .ok_or_else(|| anyhow!("No active task found in CHANGELOG.md"))?
+        .get(1)
+        .unwrap()
+        .as_str()
+        .to_string();
+
+    let re_id = Regex::new(r"^([^\s]+)")?;
+    let task_id = re_id
+        .captures(&marker_content)
+        .ok_or_else(|| anyhow!("Invalid task marker format"))?
+        .get(1)
+        .unwrap()
+        .as_str()
+        .to_string();
+
+    let re_topic = Regex::new(r"\[topic:([^\]]+)\]")?;
+    let topic = re_topic
+        .captures(&marker_content)
+        .map(|c| c.get(1).unwrap().as_str());
+
+    // 2. Build expected path
+    let parts: Vec<&str> = task_id.split('-').collect();
+    let (date_folder, time_prefix) = if parts.len() >= 2 {
+        (parts[0], parts[1])
+    } else {
+        ("unknown_date", task_id.as_str())
+    };
+
+    let coaching_filename = if let Some(t) = topic {
+        format!("{}-{}.md", time_prefix, t)
+    } else {
+        format!("{}.md", time_prefix)
+    };
+
+    let coaching_file = {
+        let mut p = worktree_root.clone();
+        p.push("docs");
+        p.push("prompt-coaching");
+        p.push(date_folder);
+        p.push(&coaching_filename);
+        p
+    };
+
+    // 3. Ensure parent directory exists
+    if let Some(parent) = coaching_file.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    // 4. Resolve content
+    let final_content = match content {
+        Some(text) => text,
+        None => {
+            let mut buffer = String::new();
+            io::stdin().read_to_string(&mut buffer).context("Failed to read from stdin")?;
+            if buffer.trim().is_empty() {
+                return Err(anyhow!("No coaching content provided via --content or stdin."));
+            }
+            buffer
+        }
+    };
+
+    // 5. Write file
+    fs::write(&coaching_file, final_content)?;
+    println!("✓ Prompt coaching report written successfully.");
+    println!("Report path: {:?}", coaching_file);
 
     Ok(())
 }
