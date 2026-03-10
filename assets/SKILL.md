@@ -122,9 +122,24 @@ A task ID looks like `YYYYMMDD-HHMMSS`. You must parse the task ID into date (`Y
 ### Analysis Focus
 
 Evaluate the user's methodology across these areas:
-- **Context Completeness**: Are there hidden assumptions the human made? Did they point to the right initial files or architecture docs? Did the agent have to fish for context?
-- **Instruction Clarity**: Was the human's intention unambiguous? Did it prevent the agent from heading down the wrong technical path? 
-- **Course Correction**: When the agent got stuck, did the human provide effective unblocking hints, or did they provide vague directives?
+
+| Dimension | Description | Key Questions |
+|---|---|---|
+| Context Completeness | Are there hidden assumptions the human made? | Did they point to the right initial files or architecture docs? Did the agent have to fish for context? |
+| Instruction Clarity | Semantic precision of the task directives | Was the human's intention unambiguous? Did it prevent the agent from heading down the wrong technical path? |
+| Requirement Evolution | How requirements changed during the conversation | Were changes abrupt or well-motivated? Did communication gaps cause rework? |
+| Course Correction | Effectiveness of human intervention | When the agent got stuck, did the human provide effective unblocking hints, or did they provide vague directives? |
+
+### Grading Rubric
+
+Use discrete letter grades for each dimension:
+
+| Grade | Meaning |
+|---|---|
+| **A** | Excellent. Optimal context engineering. |
+| **B** | Good. Minor friction. |
+| **C** | Adequate. Notable gaps that caused rework. |
+| **D** | Poor. Significant issues leading to wasted effort. |
 
 ### Output Template
 
@@ -133,24 +148,37 @@ Use the following human-centric markdown structure:
 ```markdown
 # Prompt Coaching: [topic or task-id]
 
-## 1. What Happened
+## 1. 发生了什么 (What Happened)
 <!-- 1-2 sentence objective summary of the task and where any friction occurred. -->
 
-## 2. Abstractions & Meta-Advice
-<!-- Abstract the frictions into general categories. E.g., instead of "You didn't give me user.rs", say "When refactoring database schemas, always provide the struct definition files." Provide high-level advice on how the human should reason about supplying context. -->
+## 2. 评分 (Evaluation)
 
-## 3. Actionable "Next Time" Checklist
-<!-- 2-4 concrete bullet points for the human. Start with strong verbs.
-  - e.g., "Provide the specific CLI command output when reporting a crash."
-  - e.g., "Explicitly define the accepted file paths when requesting refactoring."
+| Dimension | Grade | Summary |
+|---|---|---|
+| Context Completeness | _ | ... |
+| Instruction Clarity | _ | ... |
+| Requirement Evolution | _ | ... |
+| Course Correction | _ | ... |
+
+## 3. 需要优化的部分 (Areas for Improvement)
+<!-- Abstract the frictions into general categories. Provide high-level advice on how the human should reason about supplying context. 
+  - DO NOT praise the user in this section. Only list what needs to be improved based on the friction that occurred.
+  - E.g., "When refactoring database schemas, always provide the struct definition files." 
+-->
+
+## 4. 可以继续保持的习惯 (What to Keep Doing)
+<!-- 1-3 concrete bullet points highlighting things the user did *exceptionally well* that actively helped the agent.
+  - CRITICAL RULE: You MUST verify the conversation history. DO NOT list hypothetical or generic best practices here. ONLY list actions the user *actually performed* in this specific task.
+  - If the user did nothing exceptionally helpful, OMIT this section entirely or write "无特别值得提取的习惯".
 -->
 ```
 
 ### Rules
 1. **Target the Human**: Address the user directly as a collaborator. Answer "How can *you* help *me* help *you* better?".
 2. **Be Constructive and Meta**: Do not just list "what I did". Generalize the experience into reusable prompt engineering rules.
-3. **Praise Good Practice**: If the human's initial prompt was perfect and the task was finished without friction, acknowledge what they did right so they can reproduce that success.
-4. **Language Alignment**: Check the `CHANGELOG.md` for the current task's language metadata (e.g., `[lang:zh]`).
+3. **No Unnecessary Praise**: The "Areas for Improvement" section must strictly focus on optimization opportunities without padding it with praise.
+4. **Strict Factual Validation**: The "What to Keep Doing" section must *only* reflect actual actions taken by the user. Never hallucinate user actions.
+5. **Language Alignment**: Check the `CHANGELOG.md` for the current task's language metadata (e.g., `[lang:zh]`).
     - If specified, generate the report in that language.
     - If not specified, detect and use the primary language used by the user in the current conversation.
     - Fallback to **English** if the language is unclear or not detected.

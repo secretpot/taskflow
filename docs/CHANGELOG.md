@@ -1,11 +1,10 @@
 # CHANGELOG
-<!-- CURRENT_TASK: 20260310-102718 [topic:coaching-template] -->
 
 ## [20260310-102718] Refine Prompt Coaching layout and rules
 - **开始时间**: 2026-03-10 10:27:18
-- **完成时间**: (进行中)
-- **类型**: (待定)
-- **描述**: (待补充)
+- **完成时间**: 2026-03-10 10:28:11
+- **类型**: feat(prompt-coaching)
+- **描述**: Refine layout and rules
 
 ## [20260310-101147] Optimize prompt-coaching taskflow feature
 - **开始时间**: 2026-03-10 10:11:47
