@@ -1,4 +1,4 @@
-use anyhow::{Result, anyhow, Context};
+use anyhow::{Result, anyhow};
 use std::fs;
 use std::path::PathBuf;
 
@@ -12,7 +12,8 @@ pub enum TaskflowMode {
 
 pub struct Config {
     pub mode: TaskflowMode,
-    pub base_branch: String,
+    pub base_branch: Option<String>,
+    pub main_branch: Option<String>,
 }
 
 const CONFIG_RELATIVE_PATH: &str = ".agent/config.toml";
@@ -74,29 +75,71 @@ fn get_config_path() -> Result<PathBuf> {
     Ok(root.join(CONFIG_RELATIVE_PATH))
 }
 
-/// Detect the operating mode by checking for the config file.
+/// Detect the operating mode.
 pub fn detect_mode() -> Result<TaskflowMode> {
-    let config_path = get_config_path()?;
-    if config_path.exists() {
-        Ok(TaskflowMode::Parallel)
-    } else {
-        Ok(TaskflowMode::Classic)
-    }
+    Ok(load_config()?.mode)
 }
 
 /// Parse the config file and return a Config struct.
-/// Only valid in Parallel mode (file must exist).
+/// If config file doesn't exist, returns default Classic mode config.
 pub fn load_config() -> Result<Config> {
-    let config_path = get_config_path()?;
-    let content = fs::read_to_string(&config_path)
-        .context("Failed to read .agent/config.toml. Is taskflow init completed?")?;
+    let mut mode = TaskflowMode::Classic;
+    let mut base_branch = None;
+    let mut main_branch = None;
 
-    let base_branch = parse_toml_value(&content, "base_branch")
-        .ok_or_else(|| anyhow!("Missing 'base_branch' in .agent/config.toml"))?;
+    if let Ok(config_path) = get_config_path() {
+        if config_path.exists() {
+            if let Ok(content) = fs::read_to_string(&config_path) {
+                if let Some(m) = parse_toml_value(&content, "mode") {
+                    if m == "parallel" {
+                        mode = TaskflowMode::Parallel;
+                    }
+                }
+                base_branch = parse_toml_value(&content, "base_branch");
+                main_branch = parse_toml_value(&content, "main_branch");
+            }
+        }
+    }
 
     Ok(Config {
-        mode: TaskflowMode::Parallel,
+        mode,
         base_branch,
+        main_branch,
+    })
+}
+
+pub struct ReleaseBranches {
+    pub base_branch: String,
+    pub main_branch: String,
+}
+
+/// Resolve exactly what branches to use for release based on config and smart fallback.
+pub fn resolve_release_branches() -> Result<ReleaseBranches> {
+    let cfg = load_config()?;
+    
+    let main_branch = if let Some(m) = cfg.main_branch {
+        m
+    } else if crate::git::branch_exists("main") {
+        "main".to_string()
+    } else if crate::git::branch_exists("master") {
+        "master".to_string()
+    } else {
+        "main".to_string()
+    };
+    
+    let base_branch = if let Some(b) = cfg.base_branch {
+        b
+    } else if crate::git::branch_exists("dev") {
+        "dev".to_string()
+    } else if crate::git::branch_exists("develop") {
+        "develop".to_string()
+    } else {
+        crate::git::get_current_branch().unwrap_or_else(|_| "dev".to_string())
+    };
+
+    Ok(ReleaseBranches {
+        base_branch,
+        main_branch,
     })
 }
 

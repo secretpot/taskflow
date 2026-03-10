@@ -365,3 +365,25 @@ pub fn push_in(dir: &std::path::Path, remote: &str, branch: &str, tags: bool) ->
     }
     Ok(())
 }
+
+/// Check if a branch exists locally or remote.
+pub fn branch_exists(branch: &str) -> bool {
+    let status = Command::new("git")
+        .arg("show-ref")
+        .arg("--verify")
+        .arg(&format!("refs/heads/{}", branch))
+        .status();
+    if let Ok(st) = status {
+        if st.success() { return true; }
+    }
+    
+    let status = Command::new("git")
+        .arg("show-ref")
+        .arg("--verify")
+        .arg(&format!("refs/remotes/origin/{}", branch))
+        .status();
+    if let Ok(st) = status {
+        if st.success() { return true; }
+    }
+    false
+}

@@ -182,14 +182,17 @@ fn open_task_classic(description: &str, topic: Option<&str>, lang: Option<&str>)
     }
 
     // Git operations: Checkout dev and pull (Skip if repo is empty)
+    let branches = config::resolve_release_branches()?;
+    let base_branch = branches.base_branch;
+
     if git::is_empty_repo()? {
-        println!("ℹ️  Empty repository detected. Skipping dev sync.");
+        println!("ℹ️  Empty repository detected. Skipping {} sync.", base_branch);
     } else {
-        println!("🚀 Switching to dev and pulling latest changes...");
-        if let Err(e) = git::checkout("dev") {
-            println!("ℹ️  'dev' branch not found. Staying on current branch. ({})", e);
+        println!("🚀 Switching to {} and pulling latest changes...", base_branch);
+        if let Err(e) = git::checkout(&base_branch) {
+            println!("ℹ️  '{}' branch not found. Staying on current branch. ({})", base_branch, e);
         } else {
-            let _ = git::pull("origin", "dev");
+            let _ = git::pull("origin", &base_branch);
         }
     }
 
@@ -237,7 +240,8 @@ fn open_task_classic(description: &str, topic: Option<&str>, lang: Option<&str>)
 }
 
 fn open_task_parallel(description: &str, topic: Option<&str>, lang: Option<&str>) -> Result<()> {
-    let cfg = config::load_config()?;
+    let branches = config::resolve_release_branches()?;
+    let base_branch = branches.base_branch;
     let _management_root = config::get_management_root()?;
     let tasks_dir = config::get_tasks_dir()?;
 
@@ -253,11 +257,11 @@ fn open_task_parallel(description: &str, topic: Option<&str>, lang: Option<&str>
     let worktree_path = tasks_dir.join(&worktree_dir_name);
 
     // Fetch latest base branch from remote (non-blocking, no checkout)
-    println!("🔄 Fetching latest {} from origin...", cfg.base_branch);
-    git::fetch("origin", &cfg.base_branch)?;
+    println!("🔄 Fetching latest {} from origin...", base_branch);
+    git::fetch("origin", &base_branch)?;
 
     // Determine start point: prefer remote tracking branch, fall back to local
-    let start_point = format!("origin/{}", cfg.base_branch);
+    let start_point = format!("origin/{}", base_branch);
     // WHY: Check if remote tracking branch exists. If not (e.g., no remote),
     // fall back to local base branch.
     let check_remote = std::process::Command::new("git")
@@ -269,8 +273,8 @@ fn open_task_parallel(description: &str, topic: Option<&str>, lang: Option<&str>
     let actual_start = if check_remote.status.success() {
         start_point
     } else {
-        println!("ℹ️  Remote tracking branch not found. Using local '{}'.", cfg.base_branch);
-        cfg.base_branch.clone()
+        println!("ℹ️  Remote tracking branch not found. Using local '{}'.", base_branch);
+        base_branch.clone()
     };
 
     // Create worktree
@@ -461,11 +465,14 @@ fn close_task_classic(
         println!("Warning: No staged changes found. Skipping git commit.");
     }
 
-    // Git workflow: Merge to dev and cleanup
-    println!("🚀 Merging task branch into dev...");
-    if let Err(e) = git::checkout("dev") {
-        println!("ℹ️  'dev' branch not found. Creating it... ({})", e);
-        git::create_branch("dev")?;
+    // Git workflow: Merge to base branch and cleanup
+    let branches = config::resolve_release_branches()?;
+    let base_branch = branches.base_branch;
+
+    println!("🚀 Merging task branch into {}...", base_branch);
+    if let Err(e) = git::checkout(&base_branch) {
+        println!("ℹ️  '{}' branch not found. Creating it... ({})", base_branch, e);
+        git::create_branch(&base_branch)?;
     }
     git::merge(&current_branch)?;
     
@@ -473,8 +480,8 @@ fn close_task_classic(
     git::delete_branch(&current_branch)?;
 
     // Push dev to remote
-    println!("📤 Syncing dev with remote...");
-    git::push("origin", "dev", false)?;
+    println!("📤 Syncing {} with remote...", base_branch);
+    git::push("origin", &base_branch, false)?;
 
     println!("✓ Task CLOSED successfully");
     println!("Task ID: {}", task_id);
@@ -491,7 +498,8 @@ fn close_task_parallel(
     footer: Option<String>,
     auto_stage: bool,
 ) -> Result<()> {
-    let cfg = config::load_config()?;
+    let branches = config::resolve_release_branches()?;
+    let base_branch = branches.base_branch;
     let management_root = config::get_management_root()?;
 
     // We must be inside a task worktree
@@ -618,8 +626,8 @@ fn close_task_parallel(
     }
 
     // Merge into base branch worktree
-    println!("🚀 Merging task branch into {}...", cfg.base_branch);
-    let base_worktree_root = management_root.join(&cfg.base_branch);
+    println!("🚀 Merging task branch into {}...", base_branch);
+    let base_worktree_root = management_root.join(&base_branch);
     git::merge_in(&base_worktree_root, &current_branch)?;
 
     // Remove worktree and delete branch
@@ -628,8 +636,8 @@ fn close_task_parallel(
     git::delete_branch_in(&management_root, &current_branch)?;
 
     // Push base branch
-    println!("📤 Syncing {} with remote...", cfg.base_branch);
-    git::push_in(&management_root, "origin", &cfg.base_branch, false)?;
+    println!("📤 Syncing {} with remote...", base_branch);
+    git::push_in(&management_root, "origin", &base_branch, false)?;
 
     println!("✓ Task CLOSED successfully (Parallel mode)");
     println!("Task ID: {}", task_id);
@@ -640,12 +648,16 @@ fn close_task_parallel(
 // --- Release ---
 
 pub fn release_task(version: &str) -> Result<()> {
+    let branches = config::resolve_release_branches()?;
+    let dev_branch = &branches.base_branch;
+    let main_branch = &branches.main_branch;
+
     println!("📦 Starting release process for version v{}...", version);
 
     // 1. Ensure we are on dev and clean
-    git::checkout("dev")?;
+    git::checkout(dev_branch)?;
     if git::has_staged_changes()? {
-        return Err(anyhow!("You have staged changes on dev. Please commit or stash them before releasing."));
+        return Err(anyhow!("You have staged changes on {}. Please commit or stash them before releasing.", dev_branch));
     }
 
     // 2. Update Cargo.toml version
@@ -657,16 +669,25 @@ pub fn release_task(version: &str) -> Result<()> {
     fs::write(&cargo_path, updated_cargo.to_string())?;
     println!("✓ Cargo.toml updated to v{}", version);
 
+    let lock_status = std::process::Command::new("cargo")
+        .arg("update")
+        .arg("-p")
+        .arg("taskflow")
+        .status()?;
+    if !lock_status.success() {
+        println!("Warning: Failed to update Cargo.lock automatically.");
+    }
+
     // 3. Commit version bump on dev and push
     git::git_add_all()?;
     git::git_commit(&format!("chore: release v{}", version))?;
-    println!("📤 Syncing dev with remote...");
-    git::push("origin", "dev", false)?;
+    println!("📤 Syncing {} with remote...", dev_branch);
+    git::push("origin", dev_branch, false)?;
 
     // 4. Merge dev into main
-    println!("🚀 Merging dev into main...");
-    git::checkout("main")?;
-    git::merge("dev")?;
+    println!("🚀 Merging {} into {}...", dev_branch, main_branch);
+    git::checkout(main_branch)?;
+    git::merge(dev_branch)?;
 
     // 5. Create tag
     println!("🏷️  Creating tag v{}...", version);
@@ -684,11 +705,11 @@ pub fn release_task(version: &str) -> Result<()> {
     }
 
     // 6. Push main and tags
-    println!("📤 Syncing main and tags with remote...");
-    git::push("origin", "main", true)?;
+    println!("📤 Syncing {} and tags with remote...", main_branch);
+    git::push("origin", main_branch, true)?;
 
     // 7. Return to dev
-    git::checkout("dev")?;
+    git::checkout(dev_branch)?;
 
     println!("Release v{} complete!", version);
     println!("GitHub Actions will now automatically build and publish the release.");
@@ -756,11 +777,11 @@ fn status_classic() -> Result<()> {
 }
 
 fn status_parallel() -> Result<()> {
-    let cfg = config::load_config()?;
+    let branches = config::resolve_release_branches()?;
     let tasks_dir = config::get_tasks_dir()?;
 
     println!("Mode:        Parallel");
-    println!("Base branch: {}", cfg.base_branch);
+    println!("Base branch: {}", branches.base_branch);
 
     // List active worktrees under tasks/
     let worktrees = git::worktree_list()?;
