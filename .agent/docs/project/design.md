@@ -11,7 +11,8 @@ The tool is built as a modular Rust CLI application.
 
 ### Dual-Mode Architecture
 - **Classic mode** (default): Branch-switching workflow. `open` creates a `task/` branch, `close` merges to `dev` and deletes the branch. Behavior unchanged from v1.x.
-- **Parallel mode** (opt-in via `taskflow init`): Worktree-based workflow. `open` creates a new worktree under `tasks/`, `close` merges to the configured base branch and removes the worktree. Multiple tasks can run concurrently.
+- **Parallel mode** (opt-in via `taskflow init`): Worktree-based workflow. `open` creates a new worktree under `tasks/` using `git worktree add`. `close` merges the task branch into the base branch worktree and removes the worktree. Multiple tasks can run concurrently.
+- **Coach Subcommand**: `taskflow coach [--content "text"]` allows writing coaching reports from a string or stdin. It automatically resolves the correct path in the format `docs/prompt-coaching/<YYYYMMDD>/<HHMMSS>-<topic>.md` by parsing the active task marker from CHANGELOG.md.
 
 ### Mode Detection (config.rs)
 - `detect_mode()` checks if `.agent/config.toml` exists at the git root. If yes, returns `Parallel`; otherwise `Classic`.
@@ -19,8 +20,9 @@ The tool is built as a modular Rust CLI application.
 - `load_config()` parses the TOML config to extract `base_branch`.
 
 ### State Management (task.rs)
-- **Path Resolution**: Uses `std::env::current_dir()` to ensure all operations happen relative to the project where the command is executed.
-- **Task Marker**: Uses HTML comments in `docs/CHANGELOG.md` (`<!-- CURRENT_TASK: ID -->`) as the source of truth for the active task. In Parallel mode, each worktree has its own CHANGELOG with its own marker.
+- **Path Resolution**: Uses `std::env::current_dir()` to ensure all operations happen relative to the project where the command is executed. In Parallel mode, the management root is resolved via `git rev-parse --git-common-dir`.
+- **Task Marker**: Uses HTML comments in `docs/CHANGELOG.md` (`<!-- CURRENT_TASK: ID [lang:...] [topic:...] -->`) as the source of truth for the active task. In Parallel mode, each worktree has its own CHANGELOG with its own marker.
+- **Persistence**: The tool serializes `topic` and `lang` metadata into the marker during `open`, allowing `close` and `coach` to reconstruct the intended file paths and branching logic.
 
 ### Build & Distribution (build.sh / GitHub Actions)
 - **Multi-layered Build**: Local machine builds via `build.sh`; cloud-based release builds via GitHub Actions.

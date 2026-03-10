@@ -9,7 +9,7 @@
 - **Global Installation**: Provides `install.sh` (Unix) and `install.bat` (Windows) to install `taskflow` as a native CLI command.
 - **Bilingual CLI Help**: Full English and Chinese support in `--help` output for improved readability by both humans and agents.
 - **Remote Synchronization**: `close` and `release` commands automatically push changes to remote repositories.
-- **Prompt Coaching**: `taskflow coach` subcommand provides a simplified pipe/CLI interface for agents to generate human-centric coaching reports without needing to resolve internal repository structures or directory constraints. The `close` command enforces the generation of this report.
+- **Prompt Coaching**: `taskflow coach` subcommand provides a simplified pipe/CLI interface for agents to generate human-centric coaching reports without needing to resolve internal repository structures or directory constraints. The report is written to `docs/prompt-coaching/<YYYYMMDD>/<HHMMSS>-<topic>.md`. The `close` command enforces the generation of this report.
 - **GitHub-Integrated Releases**: Automated CI/CD (GitHub Actions) for cross-platform binary distribution on Tag creation.
 - **Structured Git Commits**: Enforces Conventional Commits with Task IDs integrated into the message.
 - **Streamlined Distribution**: 
@@ -42,10 +42,10 @@
 ## Parallel Mode Structure
 When `taskflow init` is used, the project adopts this layout:
 ```
-project/                # Management root (.git/ lives here, HEAD detached)
-├── .agent/config.toml  # Mode and base_branch configuration
-├── <base_branch>/      # Main development worktree (e.g., dev/, develop/)
+project/                # Management root (.git/ lives here, taskflow-root branch)
+├── .agent/config.toml  # Parallel mode configuration (base_branch, main_branch)
+├── <base_branch>/      # Main development worktree (e.g., dev/)
 └── tasks/              # Active task worktrees
-    ├── fix-bug-123/    # Task A (independent git worktree)
-    └── add-feature/    # Task B (independent git worktree)
+    ├── <topic>-<id>/   # Task A (git worktree)
+    └── <id>/           # Task B (git worktree)
 ```
