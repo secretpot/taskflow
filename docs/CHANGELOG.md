@@ -1,11 +1,10 @@
 # CHANGELOG
-<!-- CURRENT_TASK: 20260310-093708 [topic:unify-config] -->
 
 ## [20260310-093708] Refactor configuration to unify modes and implement smart branch resolution, fixing hardcoded branch names and Cargo.lock sync in release
 - **开始时间**: 2026-03-10 09:37:08
-- **完成时间**: (进行中)
-- **类型**: (待定)
-- **描述**: (待补充)
+- **完成时间**: 2026-03-10 09:37:31
+- **类型**: refactor(config)
+- **描述**: Unify config mode and implement smart branch detection for release
 
 ## [20260309-191327] Fix parallel close commands running in deleted worktree context
 - **开始时间**: 2026-03-09 19:13:27
