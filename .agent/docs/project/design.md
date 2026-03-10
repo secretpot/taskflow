@@ -44,7 +44,11 @@ The tool is built as a modular Rust CLI application.
 - **Immediate Task Locking**: `open` command performs an immediate `chore` commit to prevent changelog data loss across branch switches.
 - **Semantic Branch & Report Naming**: Branches and Prompt Coaching reports are named `<topic>-<task-id>` for semantic clarity and full traceability, falling back to `<task-id>` if no topic is provided.
 - **Automated Publishing**: GitHub Actions triggered by tags reduce manual build errors and ensure consistent release quality.
-- **Prompt Coaching (Soft Guide + Hard Gate)**: The prompt coaching analysis is performed by the AI agent (which has conversation context), not the Rust binary. The binary enforces a **hard gate** in `close_task` by checking for the report's existence. It also supports **multi-language alignment** by storing an optional language preference in the CHANGELOG metadata (`[lang:zh]`) during `open_task`, which the agent then follows.
+- **Prompt Coaching (Human-Centric & Hard Gate)**: The analysis is performed by the AI agent and targeted at the **human user** to provide meta-level context engineering advice. The binary enforces a **hard gate** in `close_task` and provides a `coach` subcommand for agents to safely write reports. Key rules include:
+    - **Meta-Advice Focus**: Moving beyond specific fixes to abstract prompt engineering rules.
+    - **Strict Factual Validation**: Positive feedback in "What to Keep Doing" must be verified against actual user actions in the conversation (anti-hallucination).
+    - **No Fluff**: Negative feedback is isolated in "Areas for Improvement" without defensive padding.
+    - **Multi-language Alignment**: Persists `[lang:zh]` metadata in CHANGELOG to ensure report language consistency.
 - **Bilingual & Detailed Help**: CLI help text is explicitly bilingual (EN/ZH) and detailed to serve as a self-documenting "AI primitive" within agentic loops.
 - **Global Deployment & Agent Self-Healing**: Installation scripts (`install.sh`/`install.bat`) are provided to normalize the CLI path. `SKILL.md` includes logic for the Agent to auto-install the tool if it's missing, ensuring environmental robustness.
 - **PWD over Script Dir**: Solves the "skill-to-project" mismatch.

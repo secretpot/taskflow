@@ -10,7 +10,7 @@
 - **Global Installation**: Provides `install.sh` (Unix) and `install.bat` (Windows) to install `taskflow` as a native CLI command.
 - **Bilingual CLI Help**: Full English and Chinese support in `--help` output for improved readability by both humans and agents.
 - **Remote Synchronization**: `close` and `release` commands automatically push changes to remote repositories.
-- **Prompt Coaching**: `taskflow coach` subcommand provides a simplified pipe/CLI interface for agents to generate human-centric coaching reports without needing to resolve internal repository structures or directory constraints. The report is written to `docs/prompt-coaching/<YYYYMMDD>/<HHMMSS>-<topic>.md`. The `close` command enforces the generation of this report.
+- **Prompt Coaching**: `taskflow coach` subcommand provides a simplified pipe/CLI interface for agents to generate human-centric coaching reports without needing to resolve internal repository structures. These reports focus on **meta-level context engineering advice** to help human users optimize their future prompts. The `close` command enforces the generation of this report at `docs/prompt-coaching/<YYYYMMDD>/<HHMMSS>-<topic>.md`.
 - **GitHub-Integrated Releases**: Automated CI/CD (GitHub Actions) for cross-platform binary distribution on Tag creation.
 - **Structured Git Commits**: Enforces Conventional Commits with Task IDs integrated into the message.
 - **Streamlined Distribution**: 
