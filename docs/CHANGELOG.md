@@ -1,4 +1,11 @@
 # CHANGELOG
+<!-- CURRENT_TASK: 20260310-105242 [topic:docs-cleanup] -->
+
+## [20260310-105242] Finalize project documentation for prompt-coaching updates
+- **开始时间**: 2026-03-10 10:52:42
+- **完成时间**: (进行中)
+- **类型**: (待定)
+- **描述**: (待补充)
 
 ## [20260310-105009] Update project internal documentation to reflect v1.1.1 unified config and smart release logic
 - **开始时间**: 2026-03-10 10:50:09
