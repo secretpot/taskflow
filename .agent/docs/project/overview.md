@@ -4,7 +4,7 @@
 `taskflow` is a CLI tool designed to manage the development lifecycle of agents. It ensures that every code change is tracked, documented in a CHANGELOG, and committed to Git with a standardized format.
 
 - **Unified Architecture**: Supports both Classic (single-branch) and Parallel (worktree-based) task management via a single `.agent/config.toml` configuration.
-- **Smart Release Engine**: The `release` command automatically detects development and main branches (e.g., `dev`->`main` or `develop`->`master`) and ensures `Cargo.lock` is atomically synchronized with version bumps.
+- **Smart Release Engine**: The `release` command automatically detects the mode. In **Classic mode**, it handles branch switching. In **Parallel mode**, it targets the `dev/` worktree for versioning while performing the merge and tagging at the management root. It ensures `Cargo.lock` is atomically synchronized and version tags are pushed to remote.
 - **Parallel Multi-Agent Development**: `init` command converts a repo into a management root with worktree-based isolation.
 - **Automated Branching**: `open` command handles branching/worktree creation and immediate changelog "locking".
 - **Global Installation**: Provides `install.sh` (Unix) and `install.bat` (Windows) to install `taskflow` as a native CLI command.

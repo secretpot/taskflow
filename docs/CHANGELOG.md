@@ -1,11 +1,10 @@
 # CHANGELOG
-<!-- CURRENT_TASK: 20260310-173034 [topic:fix-release-parallel] -->
 
 ## [20260310-173034] Fix release command for parallel mode
 - **开始时间**: 2026-03-10 17:30:34
-- **完成时间**: (进行中)
-- **类型**: (待定)
-- **描述**: (待补充)
+- **完成时间**: 2026-03-11 08:35:32
+- **类型**: fix(release-parallel)
+- **描述**: Fix release logic for parallel mode
 
 ## [20260310-111753] Finalize 1.1.3: Improve coach robustness & sync docs
 - **开始时间**: 2026-03-10 11:17:53

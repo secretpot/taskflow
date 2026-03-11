@@ -847,6 +847,14 @@ fn close_task_parallel(
 // --- Release ---
 
 pub fn release_task(version: &str) -> Result<()> {
+    let mode = config::detect_mode()?;
+    match mode {
+        config::TaskflowMode::Classic => release_task_classic(version),
+        config::TaskflowMode::Parallel => release_task_parallel(version),
+    }
+}
+
+fn release_task_classic(version: &str) -> Result<()> {
     let branches = config::resolve_release_branches()?;
     let dev_branch = &branches.base_branch;
     let main_branch = &branches.main_branch;
@@ -893,6 +901,118 @@ pub fn release_task(version: &str) -> Result<()> {
 
     // 5. Create tag
     println!("🏷️  Creating tag v{}...", version);
+    create_tag(version)?;
+
+    // 6. Push main and tags
+    println!("📤 Syncing {} and tags with remote...", main_branch);
+    git::push("origin", main_branch, true)?;
+
+    // 7. Return to dev
+    git::checkout(dev_branch)?;
+
+    println!("Release v{} complete!", version);
+    println!("GitHub Actions will now automatically build and publish the release.");
+
+    Ok(())
+}
+
+fn release_task_parallel(version: &str) -> Result<()> {
+    let branches = config::resolve_release_branches()?;
+    let dev_branch = &branches.base_branch;
+    let main_branch = &branches.main_branch;
+    let management_root = config::get_management_root()?;
+    let base_worktree_root = management_root.join(dev_branch);
+
+    if !base_worktree_root.exists() {
+        return Err(anyhow!(
+            "Base worktree for branch '{}' not found at {:?}. Did you run 'taskflow init'?",
+            dev_branch,
+            base_worktree_root
+        ));
+    }
+
+    println!("📦 Starting release process for version v{} (Parallel Mode)...", version);
+
+    // 1. Ensure dev worktree is clean
+    let status_output = std::process::Command::new("git")
+        .current_dir(&base_worktree_root)
+        .arg("status")
+        .arg("--porcelain")
+        .output()?;
+    if !status_output.stdout.is_empty() {
+        return Err(anyhow!(
+            "Base worktree '{:?}' has uncommitted changes. Please commit or stash them first.",
+            base_worktree_root
+        ));
+    }
+
+    // 2. Update Cargo.toml version in base worktree
+    let cargo_path = base_worktree_root.join("Cargo.toml");
+    let cargo_content = fs::read_to_string(&cargo_path)?;
+    let re_version = Regex::new(r#"version = "(.*)""#)?;
+    let updated_cargo = re_version.replace(&cargo_content, format!(r#"version = "{}""#, version));
+    fs::write(&cargo_path, updated_cargo.to_string())?;
+    println!("✓ Cargo.toml in base worktree updated to v{}", version);
+
+    // Sync Cargo.lock
+    println!("🔄 Updating Cargo.lock in base worktree...");
+    let lock_status = std::process::Command::new("cargo")
+        .current_dir(&base_worktree_root)
+        .arg("update")
+        .arg("-p")
+        .arg("taskflow")
+        .status()?;
+    if !lock_status.success() {
+        println!("Warning: Failed to update Cargo.lock automatically in base worktree.");
+    }
+
+    // 3. Commit version bump on dev and push
+    println!("💾 Committing release bump in base worktree...");
+    git::commit_in(&base_worktree_root, &format!("chore: release v{}", version))?;
+    println!("📤 Syncing {} with remote...", dev_branch);
+    git::push_in(&management_root, "origin", dev_branch, false)?;
+
+    // 4. Merge dev into main in management root
+    println!("🚀 Merging {} into {} in management root...", dev_branch, main_branch);
+    // Be careful: if we are in management root, we might be on taskflow-root.
+    // We need to checkout main locally.
+    git::checkout_in(&management_root, main_branch)?;
+    git::merge_in(&management_root, dev_branch)?;
+
+    // 5. Create tag
+    println!("🏷️  Creating tag v{}...", version);
+    // Tag should be created in the management root so it's globally visible.
+    let tag_name = format!("v{}", version);
+    let status = std::process::Command::new("git")
+        .current_dir(&management_root)
+        .arg("tag")
+        .arg("-a")
+        .arg(&tag_name)
+        .arg("-m")
+        .arg(format!("Release {}", tag_name))
+        .status()?;
+
+    if !status.success() {
+        return Err(anyhow!("Failed to create git tag {} in management root", tag_name));
+    }
+
+    // 6. Push main and tags
+    println!("📤 Syncing {} and tags with remote...", main_branch);
+    git::push_in(&management_root, "origin", main_branch, true)?;
+
+    // 7. Return to previous branch in management root
+    // Typically taskflow-root. If it doesn't exist, we just stay on main but it's safer to go back.
+    if git::branch_exists("taskflow-root") {
+        let _ = git::checkout_in(&management_root, "taskflow-root");
+    }
+
+    println!("Release v{} complete!", version);
+    println!("GitHub Actions will now automatically build and publish the release.");
+
+    Ok(())
+}
+
+fn create_tag(version: &str) -> Result<()> {
     let tag_name = format!("v{}", version);
     let status = std::process::Command::new("git")
         .arg("tag")
@@ -905,17 +1025,6 @@ pub fn release_task(version: &str) -> Result<()> {
     if !status.success() {
         return Err(anyhow!("Failed to create git tag {}", tag_name));
     }
-
-    // 6. Push main and tags
-    println!("📤 Syncing {} and tags with remote...", main_branch);
-    git::push("origin", main_branch, true)?;
-
-    // 7. Return to dev
-    git::checkout(dev_branch)?;
-
-    println!("Release v{} complete!", version);
-    println!("GitHub Actions will now automatically build and publish the release.");
-
     Ok(())
 }
 

@@ -53,9 +53,11 @@ taskflow open "Brief task description" [topic] [--lang <lang-code>]
 taskflow close "<type>" "<scope>" "<subject>" "<body>" "[footer]"
 ```
 
-### 3. Release a Version
-**Intent**: Promote stable code from `dev` to `main` for distribution.
-**Project Impact**: Creates a production version, tags the commit, and triggers CI/CD via GitHub Actions.
+### 3. Release a New Version
+**Intent**: Bump project version, sync locks, and merge development into main for a production release.
+**Project Impact**: Automates `Cargo.toml` version update, `Cargo.lock` sync, multi-branch merging, and GitHub tag creation.
+
+**Usage Note (Parallel Mode)**: You MUST run this command from the **Management Root** directory. It will automatically find the development worktree to update files and then merge back into `main` at the root.
 
 ```bash
 taskflow release <version>
